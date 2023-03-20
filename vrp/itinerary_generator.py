@@ -1,5 +1,5 @@
-from vrptw_base import VrptwGraph
-from basic_aco import BasicACO
+from .vrptw_base import VrptwGraph
+from .basic_aco import BasicACO
 from .config import ACO_PARAMS
 
 

@@ -1,7 +1,10 @@
 import numpy as np
 import copy
-from ..components.place import Place
-from utils import *
+import requests
+
+from components.place import Place
+from .utils import *
+from .config import PLACE_CATEGORY_SERVICE_TIME, DEPOT_INDEX
 
 
 class Node:
@@ -10,7 +13,7 @@ class Node:
         self.id = id
         self.place = place
 
-        if id == 0:
+        if id == DEPOT_INDEX:
             self.is_depot = True
         else:
             self.is_depot = False
@@ -27,12 +30,7 @@ class VrptwGraph:
         super()
 
         self.node_num = len(places)
-        self.cat_service_time = {
-            'ACCOMMODATION': 0,
-            'ATTRACTION': 120,
-            'SHOP': 60,
-            'RESTAURANT': 90
-        }
+        self.cat_service_time = PLACE_CATEGORY_SERVICE_TIME
         self.nodes = []
         for ind, place in enumerate(places):
             if place.category != 'RESTAURANT':
@@ -44,28 +42,25 @@ class VrptwGraph:
 
             self.nodes.append(Node(ind, place, ready_time ,due_time, self.cat_service_time[place.category]))
         
+        body = {"locations": []}
+        for place in places:
+            body['locations'].append([place.longitude, place.latitude])
+
+        headers = {
+            'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
+            'Authorization': '5b3ce3597851110001cf6248df19b7fa07f4487f9c1b9426b84f6d36',
+            'Content-Type': 'application/json; charset=utf-8'
+        }
+        r = requests.post('https://api.openrouteservice.org/v2/matrix/driving-car', json=body, headers=headers)
+
+        print( r.status_code, r.reason)
+        resp = r.json()
+        dist_mat = np.array(resp['durations']).astype(int)
+        dist_mat //= 60
         
-        self.node_dist_mat = np.array([[0, 10, 11, 22, 20, 20, 16, 14, 11, 11],
-        [23, 0, 14, 28, 26, 26, 22, 7, 18, 15],
-        [15, 15, 0, 26, 23, 20, 19, 19, 10, 6],
-        [26, 36, 28, 0, 11, 12, 12, 37, 26, 25],
-        [20, 30, 23, 11, 0, 7, 6, 31, 20, 20],
-        [19, 26, 18, 9, 7, 0, 7, 30, 18, 15],
-        [15, 25, 17, 8, 6, 8, 0, 26, 15, 14],
-        [14, 9, 19, 29, 27, 27, 23, 0, 24, 20],
-        [14, 16, 8, 20, 18, 16, 14, 20, 0, 4],
-        [13, 14, 6, 22, 19, 16, 16, 18, 4, 0]])
+        self.node_dist_mat = dist_mat
         
-        self.temp_dist_mat = np.array([[0, 10, 11, 22, 20, 20, 16, 14, 11, 11],
-        [23, 0, 14, 28, 26, 26, 22, 7, 18, 15],
-        [15, 15, 0, 26, 23, 20, 19, 19, 10, 6],
-        [26, 36, 28, 0, 11, 12, 12, 37, 26, 25],
-        [20, 30, 23, 11, 0, 7, 6, 31, 20, 20],
-        [19, 26, 18, 9, 7, 0, 7, 30, 18, 15],
-        [15, 25, 17, 8, 6, 8, 0, 26, 15, 14],
-        [14, 9, 19, 29, 27, 27, 23, 0, 24, 20],
-        [14, 16, 8, 20, 18, 16, 14, 20, 0, 4],
-        [13, 14, 6, 22, 19, 16, 16, 18, 4, 0]])
+        self.temp_dist_mat = np.copy(dist_mat)
 
         for index in range(len(self.nodes)):
             wait_time = self.nodes[index].ready_time

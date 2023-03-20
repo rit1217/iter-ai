@@ -1,7 +1,8 @@
 import numpy as np
 import copy
-from vrptw_base import VrptwGraph
 from threading import Event
+
+from .vrptw_base import VrptwGraph
 
 
 class Ant:
@@ -216,8 +217,8 @@ class Ant:
                     success_to_insert = True
 
             del ind_to_visit
-        if self.index_to_visit_empty():
-            print('[insertion_procedure]: success in insertion')
+        # if self.index_to_visit_empty():
+            # print('[insertion_procedure]: success in insertion')
 
     @staticmethod
     def local_search_once(graph: VrptwGraph, travel_path: list, travel_distance: float, i_start, stop_event: Event):

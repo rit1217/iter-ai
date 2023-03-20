@@ -1,15 +1,13 @@
 import numpy as np
 import random
-from vrptw_base import VrptwGraph
-from ant import Ant
 from threading import Event
-
-import time
 import datetime
 
-from utils import *
-from ..components.agenda import Agenda
-from ..components.itinerary import Itinerary
+from .vrptw_base import VrptwGraph
+from .ant import Ant
+from .utils import *
+from components.agenda import Agenda
+from components.itinerary import Itinerary
 
 
 class BasicACO:

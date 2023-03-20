@@ -8,10 +8,12 @@ from .ant import Ant
 from .utils import *
 from components.agenda import Agenda
 from components.itinerary import Itinerary
+from .config import ACO_PARAMS
 
 
 class BasicACO:
-    def __init__(self, graph: VrptwGraph, ants_num=10, max_iter=200, beta=2, q0=0.1):
+    def __init__(self, graph: VrptwGraph, ants_num=ACO_PARAMS['ANTS_NUM'], max_iter=ACO_PARAMS['MAX_ITER']
+                 , beta=ACO_PARAMS['BETA'], q0=ACO_PARAMS['Q0']):
         self.graph = graph
         self.ants_num = ants_num
         self.max_iter = max_iter

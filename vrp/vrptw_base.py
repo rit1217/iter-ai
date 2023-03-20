@@ -9,7 +9,6 @@ from .config import PLACE_CATEGORY_SERVICE_TIME, DEPOT_INDEX
 
 class Node:
     def __init__(self, id:  int, place: Place, ready_time: float, due_time: float, service_time: float):
-        super()
         self.id = id
         self.place = place
 
@@ -27,11 +26,10 @@ class Node:
 
 class VrptwGraph:
     def __init__(self, places, start_time, end_time, rho=0.1):
-        super()
-
         self.node_num = len(places)
         self.cat_service_time = PLACE_CATEGORY_SERVICE_TIME
         self.nodes = []
+
         for ind, place in enumerate(places):
             if place.category != 'RESTAURANT':
                 ready_time = max(0, to_minute(place.open_time) - to_minute(start_time))
@@ -42,25 +40,9 @@ class VrptwGraph:
 
             self.nodes.append(Node(ind, place, ready_time ,due_time, self.cat_service_time[place.category]))
         
-        body = {"locations": []}
-        for place in places:
-            body['locations'].append([place.longitude, place.latitude])
-
-        headers = {
-            'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
-            'Authorization': '5b3ce3597851110001cf6248df19b7fa07f4487f9c1b9426b84f6d36',
-            'Content-Type': 'application/json; charset=utf-8'
-        }
-        r = requests.post('https://api.openrouteservice.org/v2/matrix/driving-car', json=body, headers=headers)
-
-        print( r.status_code, r.reason)
-        resp = r.json()
-        dist_mat = np.array(resp['durations']).astype(int)
-        dist_mat //= 60
+        self.node_dist_mat = self._cal_dist_mat(places)
         
-        self.node_dist_mat = dist_mat
-        
-        self.temp_dist_mat = np.copy(dist_mat)
+        self.temp_dist_mat = np.copy(self.node_dist_mat)
 
         for index in range(len(self.nodes)):
             wait_time = self.nodes[index].ready_time
@@ -141,6 +123,24 @@ class VrptwGraph:
         vehicle_num = travel_path.count(0)-1
         return travel_path, travel_distance, vehicle_num
 
+    def _cal_dist_mat(self, places):
+        body = {"locations": []}
+        for place in places:
+            body['locations'].append([place.longitude, place.latitude])
+
+        headers = {
+            'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
+            'Authorization': '5b3ce3597851110001cf6248df19b7fa07f4487f9c1b9426b84f6d36',
+            'Content-Type': 'application/json; charset=utf-8'
+        }
+        r = requests.post('https://api.openrouteservice.org/v2/matrix/driving-car', json=body, headers=headers)
+
+        print( r.status_code, r.reason)
+        resp = r.json()
+        dist_mat = np.array(resp['durations']).astype(int)
+        
+        return dist_mat // 60 #second to minute
+    
     def _cal_nearest_next_index(self, index_to_visit, current_index, current_time):
 
         nearest_ind = None

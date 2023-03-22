@@ -2,10 +2,16 @@ import numpy as np
 import copy
 import requests
 import googlemaps
+import os
+from dotenv import load_dotenv
+
 
 from components.place import Place
 from .utils import *
 from .config import PLACE_CATEGORY_SERVICE_TIME, DEPOT_INDEX
+
+
+load_dotenv()
 
 
 class Node:
@@ -128,7 +134,7 @@ class VrptwGraph:
         if service == "OPENROUTESERVICE":
             headers = {
                 'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
-                'Authorization': '5b3ce3597851110001cf6248df19b7fa07f4487f9c1b9426b84f6d36',
+                'Authorization': os.getenv('OPENROUTE_KEY'),
                 'Content-Type': 'application/json; charset=utf-8'
             }
             # if len(places) >= 60:
@@ -156,7 +162,7 @@ class VrptwGraph:
                 print(e)
 
         elif service == "GOOGLE":
-            gmap = googlemaps.Client(key = 'AIzaSyDkwyS716kPJ49qz2_X6DUpJfJ1LvLSda4')
+            gmap = googlemaps.Client(key = os.getenv('GCP_KEY'))
             coords = [{'lat':i.latitude, 'lng':i.longitude} for i in places]
             response = gmap.distance_matrix(coords, coords)
             dist_mat = []

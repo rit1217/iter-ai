@@ -1,6 +1,7 @@
 import numpy as np
 import copy
 import requests
+import googlemaps
 
 from components.place import Place
 from .utils import *
@@ -25,22 +26,22 @@ class Node:
 
 
 class VrptwGraph:
-    def __init__(self, places, start_time, end_time, rho=0.1):
+    def __init__(self, places, start_time, end_time, rho=0.1, distance_cal_service="OPENROUTESERVICE"):
         self.node_num = len(places)
         self.cat_service_time = PLACE_CATEGORY_SERVICE_TIME
         self.nodes = []
 
         for ind, place in enumerate(places):
             if place.category != 'RESTAURANT':
-                ready_time = max(0, to_minute(place.open_time) - to_minute(start_time))
-                due_time = min(to_minute(end_time) - to_minute(start_time), to_minute(place.close_time) - to_minute(start_time))
+                ready_time = max(0, to_minute(place.opening_time) - to_minute(start_time))
+                due_time = min(to_minute(end_time) - to_minute(start_time), to_minute(place.closing_time) - to_minute(start_time))
             else:
-                ready_time = max(to_minute(datetime.time(11,30)) - to_minute(start_time), to_minute(place.open_time) - to_minute(start_time))
-                due_time = min(to_minute(datetime.time(15)) - to_minute(start_time), to_minute(place.close_time) - to_minute(start_time))
+                ready_time = max(to_minute(datetime.time(11,30)) - to_minute(start_time), to_minute(place.opening_time) - to_minute(start_time))
+                due_time = min(to_minute(datetime.time(15)) - to_minute(start_time), to_minute(place.closing_time) - to_minute(start_time))
 
             self.nodes.append(Node(ind, place, ready_time ,due_time, self.cat_service_time[place.category]))
         
-        self.node_dist_mat = self._cal_dist_mat(places)
+        self.node_dist_mat = self._cal_dist_mat(places, distance_cal_service)
         
         self.temp_dist_mat = np.copy(self.node_dist_mat)
 
@@ -123,23 +124,52 @@ class VrptwGraph:
         vehicle_num = travel_path.count(0)-1
         return travel_path, travel_distance, vehicle_num
 
-    def _cal_dist_mat(self, places):
-        body = {"locations": []}
-        for place in places:
-            body['locations'].append([place.longitude, place.latitude])
+    def _cal_dist_mat(self, places, service):
+        if service == "OPENROUTESERVICE":
+            headers = {
+                'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
+                'Authorization': '5b3ce3597851110001cf6248df19b7fa07f4487f9c1b9426b84f6d36',
+                'Content-Type': 'application/json; charset=utf-8'
+            }
+            # if len(places) >= 60:
+            #     locations = []
+            #     for place in places:
+            #         locations.append([place.longitude, place.latitude])
+            #     r = requests.post('https://api.openrouteservice.org/v2/matrix/driving-car', json={"locations": []}, headers=headers)
+            #     resp = r.json()
+            #     dist_mat = np.array(resp['durations']).astype(int)
 
-        headers = {
-            'Accept': 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8',
-            'Authorization': '5b3ce3597851110001cf6248df19b7fa07f4487f9c1b9426b84f6d36',
-            'Content-Type': 'application/json; charset=utf-8'
-        }
-        r = requests.post('https://api.openrouteservice.org/v2/matrix/driving-car', json=body, headers=headers)
+            # else:
+            body = {"locations": []}
+            for place in places:
+                body['locations'].append([place.longitude, place.latitude])
 
-        print( r.status_code, r.reason)
-        resp = r.json()
-        dist_mat = np.array(resp['durations']).astype(int)
-        
-        return dist_mat // 60 #second to minute
+            
+            try:
+                r = requests.post('https://api.openrouteservice.org/v2/matrix/driving-car', json=body, headers=headers)
+
+                print( r.status_code, r.reason)
+                resp = r.json()
+                dist_mat = np.array(resp['durations']).astype(int)
+                dist_mat //= 60
+            except Exception as e:
+                print(e)
+
+        elif service == "GOOGLE":
+            gmap = googlemaps.Client(key = 'AIzaSyDkwyS716kPJ49qz2_X6DUpJfJ1LvLSda4')
+            coords = [{'lat':i.latitude, 'lng':i.longitude} for i in places]
+            response = gmap.distance_matrix(coords, coords)
+            dist_mat = []
+            for rowInd in range(len(response['rows'])):
+                    temp = []
+                    
+                    for i in response['rows'][rowInd]['elements']:
+                        temp.append(i['duration']['value'] // 60)
+                    dist_mat.append(temp)
+            dist_mat = np.array(dist_mat)
+            
+        return dist_mat  #second to minute
+       
     
     def _cal_nearest_next_index(self, index_to_visit, current_index, current_time):
 

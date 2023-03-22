@@ -1,15 +1,28 @@
+from .constants import *
+
+
 class Place:
 
-    def __init__(self, place_name, category, lat, lng, introduction, detail, dest, open_time, close_time):
+    def __init__(self, place_id, place_name, category, lat, lng, open_time, close_time):
+        self.place_id = place_id
         self.place_name = place_name
         self.category = category
         self.latitude = lat
         self.longitude = lng
-        self.introduction = introduction
-        self.detail = detail
-        self.destination = dest
-        self.open_time = open_time
-        self.close_time = close_time
+        self.opening_time = open_time
+        self.closing_time = close_time
 
     def __str__(self):
         return self.place_name
+    
+    def to_dict(self):
+        return {
+            'place_id': self.place_id,
+            'place_name': self.place_name, 
+            'category': self.category,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
+            'opening_time': self.opening_time.strftime(DATETIME_FORMAT),
+            'closing_time': self.closing_time.strftime(DATETIME_FORMAT)
+        }
+        

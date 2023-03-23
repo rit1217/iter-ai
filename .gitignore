@@ -1,0 +1,10 @@
+/temp/*
+!/temp/.keep
+/pyvenv.cfg
+/bin/
+/lib/
+__pycache__/
+/.vscode/
+/include/
+.DS_Store
+.env

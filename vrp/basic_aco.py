@@ -112,7 +112,7 @@ class BasicACO:
                 # print('\n')
                 # print('[iteration %d]: find a improved path, its distance is %f' % (iter, self.best_path_distance))
                 # print('it takes %0.3f second multiple_ant_colony_system running' % (time.time() - start_time_total))
-            
+                date = datetime.date(start_date.year, start_date.month, start_date.day)
                 cur_time = add_time(start_time, datetime.time(self.best_wait_time[0] // 60, self.best_wait_time[0] % 60))
                 temp = []
                 # print('\n\nBEST_PATHHH: ', self.best_path)
@@ -122,8 +122,10 @@ class BasicACO:
                     cur_node = self.graph.nodes[i]
                     cur_place = self.graph.nodes[i].place
                     service_time = cur_node.service_time
-            
-                    temp.append(Agenda(cur_place, cur_time, add_time(cur_time, datetime.time(service_time // 60, service_time % 60))))
+                    leave_time = add_time(cur_time, datetime.time(service_time // 60, service_time % 60))
+                    temp.append(Agenda(cur_place, date
+                                       , datetime.datetime(date.year, date.month, date.day, cur_time.hour, cur_time.minute, cur_time.second),
+                                        datetime.datetime(date.year, date.month, date.day, leave_time.hour, leave_time.minute, leave_time.second)))
                     if ind == len(self.best_path) - 1:
                         minute = service_time
                     else:
@@ -138,11 +140,14 @@ class BasicACO:
                         else:
                             day_start_time = start_time
                         cur_time = add_time(day_start_time, datetime.time(minute // 60, minute % 60))
-
-                        temp = [Agenda(cur_place, day_start_time, day_start_time)]
+                        date += datetime.timedelta(days=1)
+                        print('\n\n', date)
+                        temp = [Agenda(cur_place, date
+                                       , datetime.datetime(date.year, date.month, date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
+                                       , datetime.datetime(date.year, date.month, date.day, day_start_time.hour, day_start_time.minute, day_start_time.second))]
                         
 
-                itinerary = Itinerary(dest, start_date, start_date + datetime.timedelta(days=len(plan)), start_time, end_time, plan)
+                itinerary = Itinerary(dest, start_date, start_date + datetime.timedelta(days=len(plan) - 1), start_time, end_time, plan)
                 plan = []
 
             self.graph.global_update_pheromone(self.best_path, self.best_path_distance)

@@ -3,12 +3,13 @@ from datetime import datetime, date
 from .constants import *
 
 class Agenda:
-    def __init__(self, place, arrive, leave):
+    def __init__(self, place, date, arrive, leave):
         self.place = place
         if type(arrive) == datetime:
             arrive = arrive.time()
         if type(leave) == datetime:
             leave = leave.time()
+        self.date = date
         self.arrival_time = arrive #datetime
         self.leave_time = leave #datetime        
         self.duration = datetime.combine(date.today(), leave) - datetime.combine(date.today(), arrive)
@@ -27,7 +28,7 @@ class Agenda:
     def to_dict(self):
         return {
             'place': self.place.to_dict(),
-            'arrival_time': self.arrival_time.strftime(DATETIME_FORMAT),
-            'leave_time': self.leave_time.strftime(DATETIME_FORMAT),
-            'duration': str(self.duration)
+            'date': self.date.strftime(DATE_FORMAT),
+            'arrival_time': self.arrival_time.strftime(TIME_FORMAT),
+            'leave_time': self.leave_time.strftime(TIME_FORMAT),
         }

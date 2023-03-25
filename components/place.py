@@ -22,7 +22,7 @@ class Place:
             'category': self.category,
             'latitude': self.latitude,
             'longitude': self.longitude,
-            'opening_time': self.opening_time.strftime(DATETIME_FORMAT),
-            'closing_time': self.closing_time.strftime(DATETIME_FORMAT)
+            'opening_time': self.opening_time.strftime(TIME_FORMAT),
+            'closing_time': self.closing_time.strftime(TIME_FORMAT)
         }
         

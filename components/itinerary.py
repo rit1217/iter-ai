@@ -36,7 +36,7 @@ class Itinerary:
             'destination': self.destination,
             'start_date': self.start_date.strftime(DATE_FORMAT),
             'end_date': self.end_date.strftime(DATE_FORMAT),
-            'start_time': self.start_time.strftime(DATETIME_FORMAT),
-            'end_time': self.end_time.strftime(DATETIME_FORMAT),
+            'start_time': self.start_time.strftime(TIME_FORMAT),
+            'end_time': self.end_time.strftime(TIME_FORMAT),
             'plan': plan
         }

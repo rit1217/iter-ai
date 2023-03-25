@@ -27,7 +27,7 @@ class Agenda:
 
     def to_dict(self):
         return {
-            'place': self.place.to_dict(),
+            'place_id': self.place.place_id,
             'date': self.date.strftime(DATE_FORMAT),
             'arrival_time': self.arrival_time.strftime(TIME_FORMAT),
             'leave_time': self.leave_time.strftime(TIME_FORMAT),

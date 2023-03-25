@@ -28,15 +28,14 @@ class Itinerary:
     def to_dict(self):
         plan = []
         for day_plan in self.plan:
-            temp = []
             for agenda in day_plan:
-                temp.append(agenda.to_dict())
-            plan.append(temp)
+                plan.append(agenda.to_dict())
+
         return {
             'destination': self.destination,
             'start_date': self.start_date.strftime(DATE_FORMAT),
             'end_date': self.end_date.strftime(DATE_FORMAT),
-            'start_time': self.start_time.strftime(DATETIME_FORMAT),
-            'end_time': self.end_time.strftime(DATETIME_FORMAT),
+            'start_time': self.start_time.strftime(TIME_FORMAT),
+            'end_time': self.end_time.strftime(TIME_FORMAT),
             'plan': plan
         }

@@ -16,7 +16,6 @@ COPY requirements.txt .
 RUN pip3 wheel --wheel-dir=/wheels -r requirements.txt
 
 
-
 # prod
 FROM base AS prod
 ENV APP_DIR=/app\

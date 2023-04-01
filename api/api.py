@@ -21,7 +21,7 @@ def str_to_time(instr):
 @app.route('/api/generateitinerary/', methods = ['POST'])
 def api_autocomplete():
     req_body = flask.request.get_json()
-    print(req_body)
+    # print(req_body)
     places = []
     for place in req_body['places']:
         places.append(
@@ -34,9 +34,8 @@ def api_autocomplete():
                     req_body['num_day'], 
                     str_to_time(req_body['start_time']), str_to_time(req_body['end_time']))
     print(itinerary)
-    # itinerary.start_date = itinerary.start_date.strftime(DATE_FORMAT)
-    # itinerary.end_date = itinerary.end_date.strftime(DATE_FORMAT)
-    # itinerary.start_time= itinerary.start_time.strftime(DATETIME_FORMAT)
-    # itinerary.end_time = itinerary.end_time.strftime(DATETIME_FORMAT)
+    itinerary = itinerary.to_dict()
+    itinerary['co_travelers'] = req_body['co_travelers']
+    itinerary['owner'] = req_body['owner']
 
-    return json.dumps(itinerary.to_dict())
+    return json.dumps(itinerary)

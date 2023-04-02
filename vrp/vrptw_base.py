@@ -33,9 +33,9 @@ class Node:
 
 
 class VrptwGraph:
-    def __init__(self, places, start_time, end_time, rho=0.1, distance_cal_service="OPENROUTESERVICE"):
+    def __init__(self, places, start_time, end_time, rho=0.1, distance_cal_service="OPENROUTESERVICE", cat_service_time=PLACE_CATEGORY_SERVICE_TIME):
         self.node_num = len(places)
-        self.cat_service_time = PLACE_CATEGORY_SERVICE_TIME
+        self.cat_service_time = cat_service_time
         self.nodes = []
 
         for ind, place in enumerate(places):

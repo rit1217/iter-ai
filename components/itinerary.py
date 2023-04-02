@@ -25,6 +25,9 @@ class Itinerary:
         
         return '' + self.destination + ' : ' + str(self.start_date) + ' - ' + str(self.end_date) + '\n' + plan
     
+    def __len__(self):
+        return len(self.plan)
+
     def to_dict(self):
         plan = []
         for day_plan in self.plan:

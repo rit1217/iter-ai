@@ -1,21 +1,14 @@
 import flask
-from datetime import datetime, date, time
+from datetime import datetime
 import json
 
 from vrp import ItineraryGenerator
 from components.place import Place
 from components.constants import *
-
+from components.utils import *
 
 app = flask.Flask(__name__) 
 
-
-def str_to_datetime(instr):
-    return datetime.strptime(instr, DATETIME_FORMAT)
-
-def str_to_time(instr):
-        dt = datetime.strptime(instr, TIME_FORMAT)
-        return time(dt.hour, dt.minute, dt.second)
 
 
 @app.route('/api/generateitinerary/', methods = ['POST'])

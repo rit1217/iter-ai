@@ -1,11 +1,11 @@
 import numpy as np
 import random
 from threading import Event
-import datetime
+from datetime import date, time, datetime, timedelta
 
 from .vrptw_base import VrptwGraph
 from .ant import Ant
-from .utils import *
+from components.utils import *
 from components.agenda import Agenda
 from components.itinerary import Itinerary
 from .config import ACO_PARAMS
@@ -112,8 +112,8 @@ class BasicACO:
                 # print('\n')
                 # print('[iteration %d]: find a improved path, its distance is %f' % (iter, self.best_path_distance))
                 # print('it takes %0.3f second multiple_ant_colony_system running' % (time.time() - start_time_total))
-                date = datetime.date(start_date.year, start_date.month, start_date.day)
-                cur_time = add_time(start_time, datetime.time(self.best_wait_time[0] // 60, self.best_wait_time[0] % 60))
+                cur_date = datetime(start_date.year, start_date.month, start_date.day)
+                cur_time = add_time(start_time, time(self.best_wait_time[0] // 60, self.best_wait_time[0] % 60))
                 temp = []
                 # print('\n\nBEST_PATHHH: ', self.best_path)
                 # print('WAIT_TIME', self.best_wait_time)
@@ -122,32 +122,32 @@ class BasicACO:
                     cur_node = self.graph.nodes[i]
                     cur_place = self.graph.nodes[i].place
                     service_time = cur_node.service_time
-                    leave_time = add_time(cur_time, datetime.time(service_time // 60, service_time % 60))
-                    temp.append(Agenda(cur_place, date
-                                       , datetime.datetime(date.year, date.month, date.day, cur_time.hour, cur_time.minute, cur_time.second),
-                                        datetime.datetime(date.year, date.month, date.day, leave_time.hour, leave_time.minute, leave_time.second)))
+                    leave_time = add_time(cur_time, time(service_time // 60, service_time % 60))
+                    temp.append(Agenda(cur_place, cur_date
+                                       , datetime(cur_date.year, cur_date.month, cur_date.day, cur_time.hour, cur_time.minute, cur_time.second),
+                                        datetime(cur_date.year, cur_date.month, cur_date.day, leave_time.hour, leave_time.minute, leave_time.second)))
                     if ind == len(self.best_path) - 1:
                         minute = service_time
                     else:
                         minute = service_time + self.graph.node_dist_mat[i][self.best_path[ind+1]]
-                    cur_time = add_time(cur_time, datetime.time(minute // 60, minute % 60))
+                    cur_time = add_time(cur_time, time(minute // 60, minute % 60))
 
                     if i == 0 and ind != 0:
                         plan.append(temp)
 
                         if ind != len(self.best_path) - 1:
-                            day_start_time = add_time(start_time, datetime.time(self.best_wait_time[ind] // 60, self.best_wait_time[ind] % 60))
+                            day_start_time = add_time(start_time, time(self.best_wait_time[ind] // 60, self.best_wait_time[ind] % 60))
                         else:
                             day_start_time = start_time
-                        cur_time = add_time(day_start_time, datetime.time(minute // 60, minute % 60))
-                        date += datetime.timedelta(days=1)
-                        print('\n\n', date)
-                        temp = [Agenda(cur_place, date
-                                       , datetime.datetime(date.year, date.month, date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
-                                       , datetime.datetime(date.year, date.month, date.day, day_start_time.hour, day_start_time.minute, day_start_time.second))]
+                        cur_time = add_time(day_start_time, time(minute // 60, minute % 60))
+                        cur_date += timedelta(days=1)
+                        print('\n\n', cur_date)
+                        temp = [Agenda(cur_place, cur_date
+                                       , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
+                                       , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second))]
                         
 
-                itinerary = Itinerary(dest, start_date, start_date + datetime.timedelta(days=len(plan) - 1), start_time, end_time, plan)
+                itinerary = Itinerary(dest, start_date, start_date + timedelta(days=len(plan) - 1), start_time, end_time, plan)
                 plan = []
 
             self.graph.global_update_pheromone(self.best_path, self.best_path_distance)

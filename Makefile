@@ -10,3 +10,9 @@ install:
 api:
 	source ./bin/activate \
 		&& python3 -m api
+
+
+.PHONY: test
+test:
+	source ./bin/activate \
+		&& python3 -m test

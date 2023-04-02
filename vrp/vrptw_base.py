@@ -3,11 +3,12 @@ import copy
 import requests
 import googlemaps
 import os
+from datetime import time
 from dotenv import load_dotenv
 
 
 from components.place import Place
-from .utils import *
+from components.utils import *
 from .config import PLACE_CATEGORY_SERVICE_TIME, DEPOT_INDEX
 
 
@@ -42,8 +43,8 @@ class VrptwGraph:
                 ready_time = max(0, to_minute(place.opening_time) - to_minute(start_time))
                 due_time = min(to_minute(end_time) - to_minute(start_time), to_minute(place.closing_time) - to_minute(start_time))
             else:
-                ready_time = max(to_minute(datetime.time(11,30)) - to_minute(start_time), to_minute(place.opening_time) - to_minute(start_time))
-                due_time = min(to_minute(datetime.time(15)) - to_minute(start_time), to_minute(place.closing_time) - to_minute(start_time))
+                ready_time = max(to_minute(time(11,30)) - to_minute(start_time), to_minute(place.opening_time) - to_minute(start_time))
+                due_time = min(to_minute(time(15)) - to_minute(start_time), to_minute(place.closing_time) - to_minute(start_time))
 
             self.nodes.append(Node(ind, place, ready_time ,due_time, self.cat_service_time[place.category]))
         

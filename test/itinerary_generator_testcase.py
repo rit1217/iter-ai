@@ -114,6 +114,14 @@ class ItineraryGeneratorTestCase(unittest.TestCase):
                     num_day, 
                     str_to_time("08:00:00"), str_to_time("19:00:00"))
         self.assertLessEqual( len(itinerary), num_day )
+        # ensure visit all places
+        unvisited = [p.place_id for p in self.places]
+        for day_plan in itinerary.plan:
+            for agenda in day_plan:
+                self.assertIn(agenda.place.place_id, unvisited)
+                if agenda.place.category != 'ACCOMMODATION':
+                    unvisited.remove(agenda.place.place_id)
+        
 
     def test_not_enough_day(self):
         num_day = 1

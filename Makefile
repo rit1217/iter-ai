@@ -6,10 +6,16 @@ install:
 		&& deactivate
 
 
-.PHONY: api
-api:
+.PHONY: itinerary_gen_api
+itinerary_gen_api:
 	source ./bin/activate \
-		&& python3 -m api
+		&& python3 -m itinerary_gen_api
+
+
+.PHONY: recommender_api
+recommender_api:
+	source ./bin/activate \
+		&& python3 -m recommender_api
 
 
 .PHONY: test

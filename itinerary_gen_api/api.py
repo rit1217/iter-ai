@@ -12,9 +12,8 @@ app = flask.Flask(__name__)
 
 
 @app.route('/api/generateitinerary/', methods = ['POST'])
-def api_autocomplete():
+def api_generateitinerary():
     req_body = flask.request.get_json()
-    # print(req_body)
     places = []
     for place in req_body['places']:
         places.append(

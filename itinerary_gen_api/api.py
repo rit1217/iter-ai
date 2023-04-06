@@ -24,7 +24,8 @@ def api_generateitinerary():
     itinerary = ItineraryGenerator().generate_itinerary(places, req_body['destination'], 
                     datetime.strptime(req_body['start_date'], DATE_FORMAT),
                     req_body['num_day'], 
-                    str_to_time(req_body['start_time']), str_to_time(req_body['end_time']))
+                    str_to_time(req_body['start_time']), str_to_time(req_body['end_time']),
+                    cat_service_time=req_body['service_time'])
     print(itinerary)
     itinerary = itinerary.to_dict()
     itinerary['co_travelers'] = req_body['co_travelers']

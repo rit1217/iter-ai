@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 from components.place import Place
 from components.utils import *
+from components.constants import *
 from .config import PLACE_CATEGORY_SERVICE_TIME, DEPOT_INDEX
 
 
@@ -39,18 +40,31 @@ class VrptwGraph:
         self.nodes = []
 
         for ind, place in enumerate(places):
-            if place.category != 'RESTAURANT':
-                ready_time = max(0, to_minute(place.opening_time) - to_minute(start_time))
-                due_time = min(to_minute(end_time) - to_minute(start_time), to_minute(place.closing_time) - to_minute(start_time))
-            else:
-                ready_time = max(to_minute(time(11,30)) - to_minute(start_time), to_minute(place.opening_time) - to_minute(start_time))
-                due_time = min(to_minute(time(15)) - to_minute(start_time), to_minute(place.closing_time) - to_minute(start_time))
+            # if place.category != 'RESTAURANT':
+            ready_time = max(0, to_minute(place.opening_time) - to_minute(start_time))
+            due_time = min(to_minute(end_time) - to_minute(start_time), to_minute(place.closing_time) - to_minute(start_time))
+            # else:
+            #     ready_time = max(to_minute(time(11,30)) - to_minute(start_time), to_minute(place.opening_time) - to_minute(start_time))
+            #     due_time = min(to_minute(time(15)) - to_minute(start_time), to_minute(place.closing_time) - to_minute(start_time))
 
             self.nodes.append(Node(ind, place, ready_time ,due_time, self.cat_service_time[place.category]))
         
         self.node_dist_mat = self._cal_dist_mat(places, distance_cal_service)
         
         self.temp_dist_mat = np.copy(self.node_dist_mat)
+
+        self.meal_time = {}
+
+        end = to_minute(end_time) - to_minute(start_time)
+        for k, v in MEAL_TIME.items():
+            meal_start = to_minute(str_to_time(v[0])) - to_minute(start_time)
+            meal_end = to_minute(str_to_time(v[1])) - to_minute(start_time)
+                    
+            meal_start = max(0, meal_start)
+            meal_end = min(meal_end, end - 150)
+    
+            if meal_start <= meal_end:
+                self.meal_time[k] = [meal_start, meal_end]
 
         for index in range(len(self.nodes)):
             wait_time = self.nodes[index].ready_time
@@ -91,6 +105,17 @@ class VrptwGraph:
         for next_ind in best_path[1:]:
             self.pheromone_mat[current_ind][next_ind] += self.rho/best_path_distance
             current_ind = next_ind
+
+    ##TODO
+    def global_update_multi_pheromone(self, best_path, path_score, best_score):
+        
+        self.pheromone_mat = (1-self.rho) * self.pheromone_mat
+
+        current_ind = best_path[0]
+        for next_ind in best_path[1:]:
+            self.pheromone_mat[current_ind][next_ind] += 1 / (1 + path_score - best_score)
+            current_ind = next_ind
+
 
     def nearest_neighbor_heuristic(self, max_vehicle_num=None):
         index_to_visit = list(range(1, self.node_num))

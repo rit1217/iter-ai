@@ -14,6 +14,7 @@ class Ant:
         self.travel_path = [start_index]
         self.travel_time = []
         self.wait_time = []
+        self.day_meals = list(graph.meal_time.keys())
 
         self.index_to_visit = list(range(graph.node_num))
         self.index_to_visit.remove(start_index)
@@ -43,16 +44,25 @@ class Ant:
         self.travel_time.append(self.graph.temp_dist_mat[self.current_index][next_index])
         self.wait_time.append(self.graph.temp_dist_mat[self.current_index][next_index] - \
                         self.graph.node_dist_mat[self.current_index][next_index])
+        
+        next_node = self.graph.nodes[next_index]
 
         dist = self.graph.temp_dist_mat[self.current_index][next_index]
 
-        if self.graph.nodes[next_index].is_depot:
+        if next_node.is_depot:
             self.vehicle_travel_time = 0
 
         else:            
-            self.vehicle_travel_time += dist + self.graph.nodes[next_index].service_time
+            self.vehicle_travel_time += dist + next_node.service_time
             self.index_to_visit.remove(next_index)
             self.available_index = self.index_to_visit[:]
+
+        if next_node.place.category == 'RESTAURANT':
+            if len(self.day_meals) > 1:
+                self.day_meals.pop(0)
+            else:
+                self.day_meals = list(self.graph.meal_time.keys())
+
 
         self.current_index = next_index
 
@@ -70,17 +80,30 @@ class Ant:
         return False
 
     def check_condition(self, next_index) -> bool:
+        next_node = self.graph.nodes[next_index]
 
         dist = self.graph.node_dist_mat[self.current_index][next_index]
-        wait_time = max(self.graph.nodes[next_index].ready_time - self.vehicle_travel_time - dist, 0)
+        wait_time = max(next_node.ready_time - self.vehicle_travel_time - dist, 0)
 
-        service_time = self.graph.nodes[next_index].service_time
+        service_time = next_node.service_time
+        arrive_time = self.vehicle_travel_time + dist
 
-        if self.vehicle_travel_time + dist + service_time > self.graph.nodes[0].due_time:
+
+        if  arrive_time + service_time > self.graph.nodes[0].due_time:
             return False
 
-        if self.vehicle_travel_time + dist < self.graph.nodes[next_index].ready_time or \
-            self.vehicle_travel_time + dist + service_time > self.graph.nodes[next_index].due_time:
+        if arrive_time < next_node.ready_time or \
+            arrive_time + service_time > next_node.due_time:
+            return False
+        
+        if arrive_time >= self.graph.meal_time[self.day_meals[0]][0] and \
+            arrive_time <= self.graph.meal_time[self.day_meals[0]][1] and \
+            next_node.place.category != 'RESTAURANT':
+            return False
+        
+        if (arrive_time < self.graph.meal_time[self.day_meals[0]][0] or \
+            arrive_time > self.graph.meal_time[self.day_meals[0]][1]) and \
+            next_node.place.category == 'RESTAURANT':
             return False
 
         return True

@@ -19,7 +19,8 @@ class BasicACO:
         self.max_iter = max_iter
         self.beta = beta
         self.q0 = q0
-        self.best_path_distance = None
+        self.best_score = None
+        self.best_travel_distance = None
         self.best_path = None
         self.best_vehicle_num = None
         self.best_wait_time = None
@@ -69,43 +70,60 @@ class BasicACO:
                         ants[k].wait_time = ants[k].wait_time[:-1]
                         unused_depot_count += 1
 
-                        wait_time = self.graph.nodes[ants[k].index_to_visit[0]].ready_time
-                        next_index = ants[k].index_to_visit[0]
-                        for ind in ants[k].index_to_visit[1:]:
-                            ind_ready_time = self.graph.nodes[ind].ready_time
-                            if ind_ready_time < wait_time:
-                                wait_time = ind_ready_time
+                        wait_time = float('inf')
+                        next_index = None
+                        for ind in ants[k].index_to_visit:
+                            temp_wait_time = self.graph.nodes[ind].ready_time
+                            if temp_wait_time >= self.graph.meal_time[ants[k].day_meals[0]][0] and \
+                                temp_wait_time <= self.graph.meal_time[ants[k].day_meals[0]][1] and \
+                                    self.graph.nodes[ind].place.category != 'RESTAURANT':
+                                continue
+
+                            if temp_wait_time < wait_time:
+                                wait_time = temp_wait_time
                                 next_index = ind
+
+                        # wait_time = self.graph.nodes[ants[k].index_to_visit[0]].ready_time
+                        # next_index = ants[k].index_to_visit[0]
+                        # for ind in ants[k].index_to_visit[1:]:
+                        #     ind_ready_time = self.graph.nodes[ind].ready_time
+                        #     if ind_ready_time < wait_time:
+                        #         wait_time = ind_ready_time
+                        #         next_index = ind
+
                         ants[k].move_to_next_index(next_index)
 
                     self.graph.local_update_pheromone(ants[k].current_index, next_index)
 
-                if ants[k].index_to_visit_empty():
+                if ants[k].travel_path[-1] != 0:
                     ants[k].graph.local_update_pheromone(ants[k].current_index, 0)
                     ants[k].move_to_next_index(0)
                     ants[k].wait_time.append(0)
 
-                ants[k].insertion_procedure(stop_event)
+                # ants[k].insertion_procedure(stop_event)
 
-            new_ants = []
-            for ant in ants:
-                if ant.index_to_visit_empty():
-                    new_ants.append(ant)
-            ants = new_ants
+            # new_ants = []
+            # for ant in ants:
+            #     if ant.index_to_visit_empty():
+            #         new_ants.append(ant)
+            # ants = new_ants
 
             if len(ants) == 0:
                 continue
 
-            paths_distance = np.array([ant.total_travel_distance for ant in ants])
-            best_index = np.argmin(paths_distance)
+            ##TODO
+            scores = np.array([self.cal_score(ant) for ant in ants])
+            paths_score = [i['TOTAL'] for i in scores] 
+            best_index = np.argmax(paths_score)
 
-            if self.best_path is None or paths_distance[best_index] < self.best_path_distance:
+            if self.best_path is None or paths_score[best_index] > self.best_score:
                 self.best_path = ants[int(best_index)].travel_path
                 self.best_wait_time = ants[int(best_index)].wait_time
                 self.best_ants.append(ants[int(best_index)])
 
                 # print('PATH DISTS', paths_distance, best_index)
-                self.best_path_distance = paths_distance[best_index]
+                self.best_score = paths_score[best_index]
+                self.best_travel_distance = ants[int(best_index)].total_travel_distance
                 self.best_vehicle_num = self.best_path.count(0) - 1
                 start_iteration = iter
 
@@ -150,7 +168,8 @@ class BasicACO:
                 itinerary = Itinerary(dest, start_date, start_date + timedelta(days=len(plan) - 1), start_time, end_time, plan)
                 plan = []
 
-            self.graph.global_update_pheromone(self.best_path, self.best_path_distance)
+            #TODO
+            self.graph.global_update_pheromone(self.best_path, self.best_travel_distance)
 
             given_iteration = 100
             if iter - start_iteration > given_iteration and len(plan) == 2:
@@ -201,3 +220,15 @@ class BasicACO:
             ind = int(N * random.random())
             if random.random() <= norm_transition_prob[ind]:
                 return index_to_visit[ind]
+            
+    ##TODO
+    def place_visit_objective(self, path):
+        pass
+
+    
+    def total_time_objective(self, ant):
+        return ant.total_travel_distance
+
+    def cal_score(self, ant):
+        return {'TOTAL' :100 / self.total_time_objective(ant)}
+        

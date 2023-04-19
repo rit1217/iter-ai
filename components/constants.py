@@ -28,3 +28,5 @@ MEAL_TIME = {
     'LUNCH': ["11:30:00", "13:30:00"],
     'DINNER': ["17:00:00", "19:00:00"]
 }
+
+DAY_OF_WEEK = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']

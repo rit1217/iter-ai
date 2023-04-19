@@ -33,7 +33,7 @@ class BasicACO:
 
         for iter in range(self.max_iter):
             stop_event = Event()
-            ants = list(Ant(self.graph) for _ in range(self.ants_num))
+            ants = list(Ant(self.graph, start_date) for _ in range(self.ants_num))
 
             for k in range(self.ants_num):
                 unused_depot_count = day_num
@@ -73,7 +73,7 @@ class BasicACO:
                         wait_time = float('inf')
                         next_index = None
                         for ind in ants[k].index_to_visit:
-                            temp_wait_time = self.graph.nodes[ind].ready_time
+                            temp_wait_time = self.graph.nodes[ind].ready_time[DAY_OF_WEEK[ants[k].day.weekday()]]
                             if temp_wait_time >= self.graph.meal_time[ants[k].day_meals[0]][0] and \
                                 temp_wait_time <= self.graph.meal_time[ants[k].day_meals[0]][1] and \
                                     self.graph.nodes[ind].place.category != 'RESTAURANT':
@@ -222,13 +222,16 @@ class BasicACO:
                 return index_to_visit[ind]
             
     ##TODO
-    def place_visit_objective(self, path):
-        pass
+    def place_visit_objective(self, ant):
+        return 0
 
     
     def total_time_objective(self, ant):
-        return ant.total_travel_distance
+        return 100 / ant.total_travel_distance
 
     def cal_score(self, ant):
-        return {'TOTAL' :100 / self.total_time_objective(ant)}
+        place_visit_score = self.place_visit_objective(ant)
+        distance_score = self.total_time_objective(ant)
+        return {'VISIT': place_visit_score, 'DISTANCE': distance_score, 
+                'TOTAL' :place_visit_score + distance_score}
         

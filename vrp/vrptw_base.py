@@ -34,15 +34,20 @@ class Node:
 
 
 class VrptwGraph:
-    def __init__(self, places, start_time, end_time, rho=0.1, distance_cal_service="OPENROUTESERVICE", cat_service_time=PLACE_CATEGORY_SERVICE_TIME):
+    def __init__(self, places, start_date, start_time, end_time, rho=0.1, distance_cal_service="OPENROUTESERVICE", cat_service_time=PLACE_CATEGORY_SERVICE_TIME):
         self.node_num = len(places)
         self.cat_service_time = cat_service_time
         self.nodes = []
 
         for ind, place in enumerate(places):
             # if place.category != 'RESTAURANT':
-            ready_time = max(0, to_minute(place.opening_time) - to_minute(start_time))
-            due_time = min(to_minute(end_time) - to_minute(start_time), to_minute(place.closing_time) - to_minute(start_time))
+            ready_time = {}
+            due_time = {}
+            for day, op_time in place.opening_time.items():
+                ready_time[day] = max(0, to_minute(op_time) - to_minute(start_time))
+
+            for day, cl_time in place.closing_time.items():
+                due_time[day] = min(to_minute(end_time) - to_minute(start_time), to_minute(cl_time) - to_minute(start_time))
             # else:
             #     ready_time = max(to_minute(time(11,30)) - to_minute(start_time), to_minute(place.opening_time) - to_minute(start_time))
             #     due_time = min(to_minute(time(15)) - to_minute(start_time), to_minute(place.closing_time) - to_minute(start_time))
@@ -67,7 +72,7 @@ class VrptwGraph:
                 self.meal_time[k] = [meal_start, meal_end]
 
         for index in range(len(self.nodes)):
-            wait_time = self.nodes[index].ready_time
+            wait_time = self.nodes[index].ready_time[DAY_OF_WEEK[start_date.weekday()]]
             for i in range(self.node_num):
                 if i != self.nodes[index]:
                     self.temp_dist_mat[i][index] += wait_time
@@ -75,7 +80,7 @@ class VrptwGraph:
 
         self.rho = rho
 
-        self.nnh_travel_path, self.init_pheromone_val, _ = self.nearest_neighbor_heuristic(self.vehicle_num)
+        self.nnh_travel_path, self.init_pheromone_val, _ = self.nearest_neighbor_heuristic(start_date, self.vehicle_num)
         self.init_pheromone_val = 1/(self.init_pheromone_val * self.node_num)
 
         self.pheromone_mat = np.ones((self.node_num, self.node_num)) * self.init_pheromone_val
@@ -117,7 +122,7 @@ class VrptwGraph:
             current_ind = next_ind
 
 
-    def nearest_neighbor_heuristic(self, max_vehicle_num=None):
+    def nearest_neighbor_heuristic(self, current_date, max_vehicle_num=None):
         index_to_visit = list(range(1, self.node_num))
         current_index = 0
         current_time = 0
@@ -127,7 +132,7 @@ class VrptwGraph:
         if max_vehicle_num is None:
             max_vehicle_num = self.node_num
         while len(index_to_visit) > 0 and max_vehicle_num > 0:
-            nearest_next_index = self._cal_nearest_next_index(index_to_visit, current_index, current_time)
+            nearest_next_index = self._cal_nearest_next_index(index_to_visit, current_index, current_time, current_date)
 
             if nearest_next_index is None:
                 travel_distance += self.temp_dist_mat[current_index][0]
@@ -140,7 +145,7 @@ class VrptwGraph:
             else:
 
                 dist = self.temp_dist_mat[current_index][nearest_next_index]
-                wait_time = max(self.nodes[nearest_next_index].ready_time - current_time - dist, 0)
+                wait_time = max(self.nodes[nearest_next_index].ready_time[DAY_OF_WEEK[current_date.weekday()]] - current_time - dist, 0)
                 service_time = self.nodes[nearest_next_index].service_time
 
                 current_time += dist + wait_time + service_time
@@ -203,7 +208,7 @@ class VrptwGraph:
         return dist_mat  #second to minute
        
     
-    def _cal_nearest_next_index(self, index_to_visit, current_index, current_time):
+    def _cal_nearest_next_index(self, index_to_visit, current_index, current_time, current_date):
 
         nearest_ind = None
         nearest_distance = None
@@ -211,13 +216,13 @@ class VrptwGraph:
         for next_index in index_to_visit:
 
             dist = self.temp_dist_mat[current_index][next_index]
-            wait_time = max(self.nodes[next_index].ready_time - current_time - dist, 0)
+            wait_time = max(self.nodes[next_index].ready_time[DAY_OF_WEEK[current_date.weekday()]] - current_time - dist, 0)
             service_time = self.nodes[next_index].service_time
 
-            if current_time + dist + wait_time + service_time + self.node_dist_mat[next_index][0] > self.nodes[0].due_time:
+            if current_time + dist + wait_time + service_time + self.node_dist_mat[next_index][0] > self.nodes[0].due_time[DAY_OF_WEEK[current_date.weekday()]]:
                 continue
 
-            if current_time + dist < self.nodes[next_index].ready_time or current_time + dist > self.nodes[next_index].due_time:
+            if current_time + dist < self.nodes[next_index].ready_time[DAY_OF_WEEK[current_date.weekday()]] or current_time + dist > self.nodes[next_index].due_time[DAY_OF_WEEK[current_date.weekday()]]:
 
                 continue
 

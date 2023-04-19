@@ -1,12 +1,14 @@
 import numpy as np
 import copy
 from threading import Event
+from datetime import datetime, timedelta
 
 from .vrptw_base import VrptwGraph
+from components.constants import *
 
 
 class Ant:
-    def __init__(self, graph: VrptwGraph, start_index=0):
+    def __init__(self, graph: VrptwGraph, start_date: datetime, start_index=0):
         self.graph = graph
         self.current_index = start_index
         self.vehicle_travel_time = 0
@@ -15,6 +17,7 @@ class Ant:
         self.travel_time = []
         self.wait_time = []
         self.day_meals = list(graph.meal_time.keys())
+        self.day = start_date
 
         self.index_to_visit = list(range(graph.node_num))
         self.index_to_visit.remove(start_index)
@@ -29,8 +32,9 @@ class Ant:
     def cal_temp_dist_mat(self, vehicle_travel_time):
         distance_mat = np.copy(self.graph.node_dist_mat)
         for index in range(1, self.graph.node_num):
-            if self.graph.nodes[index].ready_time > vehicle_travel_time:
-                wait_time = self.graph.nodes[index].ready_time - vehicle_travel_time
+            ready_time = self.graph.nodes[index].ready_time[DAY_OF_WEEK[self.day.weekday()]]
+            if ready_time > vehicle_travel_time:
+                wait_time = ready_time - vehicle_travel_time
                 for i in range(self.graph.node_num):
                     if i != index:
                         distance_mat[i][index] += wait_time
@@ -51,7 +55,7 @@ class Ant:
 
         if next_node.is_depot:
             self.vehicle_travel_time = 0
-
+            self.day += timedelta(days=1)
         else:            
             self.vehicle_travel_time += dist + next_node.service_time
             self.index_to_visit.remove(next_index)
@@ -83,17 +87,20 @@ class Ant:
         next_node = self.graph.nodes[next_index]
 
         dist = self.graph.node_dist_mat[self.current_index][next_index]
-        wait_time = max(next_node.ready_time - self.vehicle_travel_time - dist, 0)
+        # wait_time = max(ready_time - self.vehicle_travel_time - dist, 0)
 
         service_time = next_node.service_time
         arrive_time = self.vehicle_travel_time + dist
 
+        ready_time = next_node.ready_time[DAY_OF_WEEK[self.day.weekday()]]
+        due_time = next_node.due_time[DAY_OF_WEEK[self.day.weekday()]]
 
-        if  arrive_time + service_time > self.graph.nodes[0].due_time:
+
+        if  arrive_time + service_time > self.graph.nodes[0].due_time[DAY_OF_WEEK[self.day.weekday()]]:
             return False
 
-        if arrive_time < next_node.ready_time or \
-            arrive_time + service_time > next_node.due_time:
+        if arrive_time < ready_time or \
+            arrive_time + service_time > due_time:
             return False
         
         if arrive_time >= self.graph.meal_time[self.day_meals[0]][0] and \

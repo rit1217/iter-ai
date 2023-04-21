@@ -20,6 +20,11 @@ class PlaceRecommender:
         
         return items_list[['place_id', 'similarity_score']].sort_values('similarity_score', ascending=False)
     
+    def _roulette_selector(self, places):
+        pop_fitness = places['popularity'].sum()
+        places['probability'] = places.popularity / pop_fitness
+
+        return np.random.choice(places['place_id'], p=places['probability'])
     
     def recommend(self, features, top_n=10, threshold=0.5):
         df = pd.read_csv(DATA_FILEPATHS['place_with_type'])

@@ -62,4 +62,4 @@ class PlaceRecommender:
         candidates_id += candidates['place_id'].values.tolist()[:top_n-candidates_count]
         df_candidates = df_merged[df_merged.place_id.isin(candidates_id)]
 
-        return df_candidates[columns][:top_n]
+        return df_candidates[columns[:len(columns)-1]][:top_n]

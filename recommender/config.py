@@ -16,6 +16,6 @@ TEMP_DIR = 'temp/'
 
 
 # Data configs.
-DATA_SUBDIRS = ['place_with_type']
+DATA_SUBDIRS = ['place_with_type', 'place_popularity', 'activity', 'attraction_type', 'place', 'opening_hour']
 DATA_FILENAMES = {x: f'{x}.csv.gz' for x in DATA_SUBDIRS}
 DATA_FILEPATHS = {k: os.path.join(TEMP_DIR, v) for k, v in DATA_FILENAMES.items()}

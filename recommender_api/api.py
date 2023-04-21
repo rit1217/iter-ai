@@ -13,4 +13,4 @@ def api_recommendplace():
     req_body = flask.request.get_json()
     recommended_places = PlaceRecommender().recommend_attraction(req_body['features'], req_body['top_n'])
 
-    return json.dumps({"recommended_places":recommended_places.tolist()})
+    return json.dumps({"places":recommended_places.to_dict('records')}, indent=4)

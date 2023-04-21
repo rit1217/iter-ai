@@ -15,15 +15,11 @@ class PlaceRecommender:
         
         return similarity
     
-    def _calc_feature_sim(self, features, items_list):
-        similarities = []
-        items_list = items_list.values.tolist()
-
-        for item in items_list:
-            sim = self._jaccard_simmilarity(features, eval(item[2]))
-            similarities.append([item[1], item[2], sim])
+    def _calc_feature_sim(self, features, item_feature, items_list):
+        items_list['similarity_score'] = items_list.apply(lambda x: self._jaccard_simmilarity(features, x[item_feature]), axis=1)
         
-        return similarities
+        return items_list[['place_id', 'similarity_score']].sort_values('similarity_score', ascending=False)
+    
     
     def recommend(self, features, top_n=10, threshold=0.5):
         df = pd.read_csv(DATA_FILEPATHS['place_with_type'])

@@ -7,6 +7,7 @@ from components.utils import row_to_dict
 
 
 class PlaceRecommender:
+
     def _jaccard_simmilarity(self, A, B):
         nominator = set(A).intersection(B)
         denominator = set(A).union(B)

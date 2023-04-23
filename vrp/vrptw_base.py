@@ -102,6 +102,18 @@ class VrptwGraph:
         self.pheromone_mat[start_ind][end_ind] = (1-self.rho) * self.pheromone_mat[start_ind][end_ind] + \
                                                   self.rho * self.init_pheromone_val
 
+    def local_update_multi_pheromone(self, start_ind, end_ind, path_score, best_score):
+        self.pheromone_mat[start_ind][end_ind] = (1-self.rho) * self.pheromone_mat[start_ind][end_ind] + \
+                                                  self.rho * self.init_pheromone_val
+        # if best_score == None:
+        #     best_score = {'VISIT': 0, 'DISTANCE': 0}
+        # # print(path_score['VISIT'], best_score['VISIT'])
+        # # print(path_score['DISTANCE'], best_score['DISTANCE'])
+        # if path_score['VISIT'] - best_score['VISIT'] != -1:
+        #     self.pheromone_mat[start_ind][end_ind] += 1 / (1 + path_score['VISIT'] - best_score['VISIT'])
+        
+        # self.pheromone_mat[start_ind][end_ind] += 1 / (1 + path_score['DISTANCE'] - best_score['DISTANCE'])
+
     def global_update_pheromone(self, best_path, best_path_distance):
         
         self.pheromone_mat = (1-self.rho) * self.pheromone_mat
@@ -114,12 +126,21 @@ class VrptwGraph:
     ##TODO
     def global_update_multi_pheromone(self, best_path, path_score, best_score):
         
+        # self.pheromone_mat = (1-self.rho) * self.pheromone_mat
+
+        # current_ind = best_path[0]
+        # for next_ind in best_path[1:]:
+        #     self.pheromone_mat[current_ind][next_ind] += 1 / (1 + path_score['VISIT'] - best_score['VISIT'])
+        #     self.pheromone_mat[current_ind][next_ind] += 1 / (1 + path_score['DISTANCE'] - best_score['DISTANCE'])
+
+        #     current_ind = next_ind
         self.pheromone_mat = (1-self.rho) * self.pheromone_mat
 
         current_ind = best_path[0]
         for next_ind in best_path[1:]:
-            self.pheromone_mat[current_ind][next_ind] += 1 / (1 + path_score - best_score)
+            self.pheromone_mat[current_ind][next_ind] += self.rho/best_score['TOTAL']
             current_ind = next_ind
+
 
 
     def nearest_neighbor_heuristic(self, current_date, max_vehicle_num=None):

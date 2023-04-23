@@ -18,9 +18,10 @@ PLACE_CATEGORY_SERVICE_TIME = {
     'RESTAURANT': 90
 }
 ACO_PARAMS = {
-    'ANTS_NUM': 10,
+    'ANTS_NUM': 20,
     'MAX_ITER': 200,
     'BETA': 2,
     'Q0': 0.1
 }
+RHO = 0.3
 DEPOT_INDEX = 0

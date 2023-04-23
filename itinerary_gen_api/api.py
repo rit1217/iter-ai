@@ -35,12 +35,14 @@ app = flask.Flask(__name__)
 def api_generateitinerary():
     req_body = flask.request.get_json()
     places = []
+    start_time = str_to_time(req_body['start_time'])
+    end_time = str_to_time(req_body['end_time'])
     for place in req_body['places']:
         opening_time = {}
         closing_time = {}
         for i in place['opening_hour']:
-            opening_time[i['day'].lower()] = str_to_time(i['opening_time'])
-            closing_time[i['day'].lower()] = str_to_time(i['closing_time'])
+            opening_time[i['day'].lower()] = str_to_time(i['opening_time']) if i['opening_time'] != 'unknown' else start_time
+            closing_time[i['day'].lower()] = str_to_time(i['closing_time']) if i['opening_time'] != 'unknown' else end_time
 
         places.append(
             Place(place['place_id'], place['place_name'], place['category_code'], place['latitude'], place['longitude'],
@@ -50,12 +52,12 @@ def api_generateitinerary():
     itinerary = ItineraryGenerator().generate_itinerary(places, req_body['destination'], 
                     datetime.strptime(req_body['start_date'], DATE_FORMAT),
                     req_body['num_day'], 
-                    str_to_time(req_body['start_time']), str_to_time(req_body['end_time']),
+                    start_time, end_time,
                     cat_service_time=req_body['service_time'])
     print(itinerary)
     itinerary = itinerary.to_dict()
     itinerary['co_travelers'] = req_body['co_travelers']
     itinerary['owner'] = req_body['owner']
-    print(json.dumps(itinerary))
+    print(json.dumps(itinerary, indent=2))
 
     return json.dumps(itinerary)

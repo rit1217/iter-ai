@@ -230,7 +230,7 @@ class BasicACO:
         # print(ant.wait_time)
         # print(avg_travel_time)
         num_place = len(set(path))
-        num_accom = 0
+        num_type = {}
         num_shop = 0
         score = 0
         for ind in path:
@@ -239,9 +239,11 @@ class BasicACO:
                 # score += num_place * 2
                 score += avg_travel_time * 2
             elif place.category == 'ATTRACTION':
-                # score += num_place - num_accom
-                score += avg_travel_time * ((num_place - num_accom)/num_place)
-                num_accom += 1
+                for type in place.types:
+                    if type not in num_type.keys():
+                        num_type[type] = 0
+                    score += (avg_travel_time * ((num_place - num_type[type])/num_place))/len(place.types)
+                    num_type[type] += 1
             elif place.category == 'SHOP':
                 # score += num_place - num_shop
                 score += avg_travel_time * ((num_place - num_shop)/num_place)

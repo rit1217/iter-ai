@@ -3,7 +3,7 @@ from .constants import *
 
 class Place:
 
-    def __init__(self, place_id, place_name, category, lat, lng, open_time, close_time):
+    def __init__(self, place_id, place_name, category, lat, lng, open_time, close_time, types=None):
         self.place_id = place_id
         self.place_name = place_name
         self.category = category
@@ -11,6 +11,7 @@ class Place:
         self.longitude = lng
         self.opening_time = open_time
         self.closing_time = close_time
+        self.types = types
 
     def __str__(self):
         return self.place_name
@@ -22,6 +23,7 @@ class Place:
             'category': self.category,
             'latitude': self.latitude,
             'longitude': self.longitude,
+            'types': self.types,
             'opening_time': self.opening_time.strftime(TIME_FORMAT),
             'closing_time': self.closing_time.strftime(TIME_FORMAT)
         }

@@ -43,10 +43,13 @@ def api_generateitinerary():
         for i in place['opening_hour']:
             opening_time[i['day'].lower()] = str_to_time(i['opening_time']) if i['opening_time'] != 'unknown' else start_time
             closing_time[i['day'].lower()] = str_to_time(i['closing_time']) if i['opening_time'] != 'unknown' else end_time
+        types = None
+        if place['category_code'] == "ATTRACTION":
+            types = place['attraction_types']
 
         places.append(
             Place(place['place_id'], place['place_name'], place['category_code'], place['latitude'], place['longitude'],
-                 opening_time, closing_time)
+                 opening_time, closing_time, types)
         )
 
     itinerary = ItineraryGenerator().generate_itinerary(places, req_body['destination'], 

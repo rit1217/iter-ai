@@ -118,6 +118,7 @@ class BasicACO:
 
             if self.best_path is None or paths_score[best_index] < self.best_score['TOTAL']:
                 self.best_path = ants[int(best_index)].travel_path
+                self.best_travel_time = ants[int(best_index)].travel_time
                 self.best_wait_time = ants[int(best_index)].wait_time
                 self.best_ants.append(ants[int(best_index)])
 
@@ -133,17 +134,29 @@ class BasicACO:
                 cur_date = datetime(start_date.year, start_date.month, start_date.day)
                 cur_time = add_time(start_time, time(self.best_wait_time[0] // 60, self.best_wait_time[0] % 60))
                 temp = []
+                wait_time_ind = 0
                 # print('\n\nBEST_PATHHH: ', self.best_path)
                 # print('WAIT_TIME', self.best_wait_time)
                 # print('BEST_PATH_DIST', self.best_path_distance)
                 for ind, i in enumerate(self.best_path):
                     cur_node = self.graph.nodes[i]
                     cur_place = self.graph.nodes[i].place
+                    if ind < len(self.best_path) - 1:
+                        next_place = self.graph.nodes[self.best_path[ind+1]].place
+                        if cur_place.category == "ACCOMMODATION" and next_place.category == "ACCOMMODATION":
+                            travel_time = {}
+                        else:
+                            travel_time = {next_place.place_id: self.best_travel_time[ind+1] - self.best_wait_time[wait_time_ind]}
+                            wait_time_ind += 1
+                    else:
+                        next_place = None
+                        travel_time = {}
                     service_time = cur_node.service_time
                     leave_time = add_time(cur_time, time(service_time // 60, service_time % 60))
                     temp.append(Agenda(cur_place, cur_date
-                                       , datetime(cur_date.year, cur_date.month, cur_date.day, cur_time.hour, cur_time.minute, cur_time.second),
-                                        datetime(cur_date.year, cur_date.month, cur_date.day, leave_time.hour, leave_time.minute, leave_time.second)))
+                                       , datetime(cur_date.year, cur_date.month, cur_date.day, cur_time.hour, cur_time.minute, cur_time.second)
+                                       ,datetime(cur_date.year, cur_date.month, cur_date.day, leave_time.hour, leave_time.minute, leave_time.second)
+                                        ,travel_time))
                     if ind == len(self.best_path) - 1:
                         minute = service_time
                     else:
@@ -159,10 +172,11 @@ class BasicACO:
                             day_start_time = start_time
                         cur_time = add_time(day_start_time, time(minute // 60, minute % 60))
                         cur_date += timedelta(days=1)
-                        print('\n\n', cur_date)
+                        # print('\n\n', cur_date)
                         temp = [Agenda(cur_place, cur_date
                                        , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
-                                       , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second))]
+                                       , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
+                                       , travel_time)]
                         
 
                 itinerary = Itinerary(dest, start_date, start_date + timedelta(days=len(plan) - 1), start_time, end_time, plan)

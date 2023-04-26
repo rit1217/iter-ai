@@ -26,7 +26,7 @@ class PlaceRecommender:
 
         return np.random.choice(places['place_id'], p=places['probability'])
     
-    def recommend_attraction(self, features, top_n=15):
+    def recommend_attraction(self, features, activities, destination, top_n=15):
         # df = pd.read_csv(DATA_FILEPATHS['place_with_type'])
         candidates_count = len(features)
         candidates_id = []

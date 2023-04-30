@@ -39,12 +39,13 @@ class BasicACO:
                 unused_depot_count = day_num
                 
                 while not ants[k].index_to_visit_empty() and unused_depot_count > 0:
+
                     next_index = self.select_next_index(ants[k])
                     wait_time = self.graph.temp_dist_mat[ants[k].current_index][next_index] - \
                         self.graph.node_dist_mat[ants[k].current_index][next_index]
 
                     if not ants[k].check_condition(next_index):
-                        
+
                         temp = ants[k].index_to_visit[:]
                         flag = False
                         for n in temp:
@@ -97,6 +98,7 @@ class BasicACO:
 
                 if ants[k].travel_path[-1] != 0:
                     ants[k].graph.local_update_multi_pheromone(ants[k].current_index, 0, self.cal_score(ants[k]), self.best_score )
+
                     ants[k].move_to_next_index(0)
                     ants[k].wait_time.append(0)
 
@@ -108,8 +110,8 @@ class BasicACO:
             #         new_ants.append(ant)
             # ants = new_ants
 
-            if len(ants) == 0:
-                continue
+            # if len(ants) == 0:
+            #     continue
 
             ##TODO
             scores = np.array([self.cal_score(ant) for ant in ants])
@@ -135,8 +137,10 @@ class BasicACO:
                 cur_time = add_time(start_time, time(self.best_wait_time[0] // 60, self.best_wait_time[0] % 60))
                 temp = []
                 wait_time_ind = 0
-                # print('\n\nBEST_PATHHH: ', self.best_path)
-                # print('WAIT_TIME', self.best_wait_time)
+                print('\n\nBEST_PATHHH: ', self.best_path)
+                print('SCORE:', self.best_score)
+                print('TRAVEL_TIME', self.best_travel_time)
+                print('WAIT_TIME', self.best_wait_time)
                 # print('BEST_PATH_DIST', self.best_path_distance)
                 for ind, i in enumerate(self.best_path):
                     cur_node = self.graph.nodes[i]
@@ -209,13 +213,16 @@ class BasicACO:
         self.graph.temp_dist_mat = distance_mat
         ant.graph.temp_dist_mat = distance_mat
 
+        # print('\n dist', distance_mat)
+
         closeness = 1 / distance_mat
+        # print('\n closeness', closeness)
 
         transition_prob = self.graph.pheromone_mat[current_index][index_to_visit] * \
             np.power(closeness[current_index][index_to_visit], self.beta)
-
+        # print('\ntrans', transition_prob)
         transition_prob = transition_prob / np.sum(transition_prob)
-
+        # print(current_index, index_to_visit,transition_prob)
         if np.random.rand() < self.q0:
             next_index = np.random.choice(index_to_visit, p=transition_prob)
         else:
@@ -230,37 +237,47 @@ class BasicACO:
 
         sum_tran_prob = np.sum(transition_prob)
         norm_transition_prob = transition_prob/sum_tran_prob
-
         while True:
             ind = int(N * random.random())
             if random.random() <= norm_transition_prob[ind]:
                 return index_to_visit[ind]
             
-    ##TODO
     def place_visit_objective(self, ant):
-        path = [ind for ind in ant.travel_path if ind != 0]
+        # ant.travel_path is list of index of nodes in a graph that visited by the ant
+        path = [ind for ind in ant.travel_path if ind != 0] #travel path excluding hotel
+
+        # ant.travel_time is list of travel_time + wait_time between places
+        # e.g. [0, 39, 18, 0, 17, 6]
+        # noted that 0 in ant.travel_time is the start of each day in the trip
+
         avg_travel_time = sum(ant.travel_time) / (len(ant.travel_time) - ant.travel_time.count(0))
-        # print(ant.travel_time)
-        # print(ant.wait_time)
-        # print(avg_travel_time)
+
         num_place = len(set(path))
         num_type = {}
+        cuisine_type = {}
         num_shop = 0
         score = 0
         for ind in path:
             place = self.graph.nodes[ind].place
             if place.category == 'RESTAURANT':
-                # score += num_place * 2
-                score += avg_travel_time * 2
+                for type in place.types:
+                    if type not in cuisine_type.keys():
+                        cuisine_type[type] = 0
+                    score += (((num_place - cuisine_type[type])/num_place)) \
+                        / len(place.types) # place.types in this case is cuisine_types for restaurant
+                    cuisine_type[type] += 1
+
             elif place.category == 'ATTRACTION':
+                # place.types is variable stored types of place, i.e.,attraction_types,
+                #  cuisine_types, etc.
                 for type in place.types:
                     if type not in num_type.keys():
                         num_type[type] = 0
-                    score += (avg_travel_time * ((num_place - num_type[type])/num_place))/len(place.types)
+                    score += ( ((num_place - num_type[type])/num_place))/len(place.types)
                     num_type[type] += 1
+
             elif place.category == 'SHOP':
-                # score += num_place - num_shop
-                score += avg_travel_time * ((num_place - num_shop)/num_place)
+                score += ((num_place - num_shop)/num_place)
                 num_shop += 1
         
         return -(score*num_place)

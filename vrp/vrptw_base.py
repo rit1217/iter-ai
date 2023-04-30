@@ -54,8 +54,10 @@ class VrptwGraph:
 
             self.nodes.append(Node(ind, place, ready_time ,due_time, self.cat_service_time[place.category]))
         
+        # for ind, node in enumerate(self.nodes):
+        #     print(ind, node.place.place_name)
+
         self.node_dist_mat = self._cal_dist_mat(places, distance_cal_service)
-        
         self.temp_dist_mat = np.copy(self.node_dist_mat)
 
         self.meal_time = {}
@@ -201,7 +203,7 @@ class VrptwGraph:
             body = {"locations": []}
             for place in places:
                 body['locations'].append([place.longitude, place.latitude])
-
+            # print('BODY', body)
             
             try:
                 r = requests.post('https://api.openrouteservice.org/v2/matrix/driving-car', json=body, headers=headers)
@@ -209,7 +211,8 @@ class VrptwGraph:
                 print( r.status_code, r.reason)
                 resp = r.json()
                 dist_mat = np.array(resp['durations']).astype(int)
-                dist_mat //= 60
+                dist_mat = dist_mat / 60
+                dist_mat = np.ceil(dist_mat).astype(int)
             except Exception as e:
                 print(e)
 

@@ -25,10 +25,10 @@ class Agenda:
         return f'{self.place.place_id} ' + str(self.place) + ' : ' + str(self.arrival_time) + ' - ' + str(self.leave_time) + ' visit for ' + str(self.duration) + f' travel {self.travel_time}'
 
     def arrive_only(self):
-        return f'{self.place.place_id} ' + str(self.place) + ' : ARRIVE ' + str(self.arrival_time)
+        return f'{self.place.place_id} ' + str(self.place) + ' : ARRIVE ' + str(self.arrival_time)+ f' travel {self.travel_time}'
 
     def leave_only(self):
-        return f'{self.place.place_id} ' + str(self.place) + ' : LEAVE ' + str(self.leave_time)
+        return f'{self.place.place_id} ' + str(self.place) + ' : LEAVE ' + str(self.leave_time)+ f' travel {self.travel_time}'
 
     def to_dict(self):
         return {

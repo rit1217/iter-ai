@@ -1,6 +1,7 @@
 import flask
 from datetime import datetime
 import json
+import time as t
 
 from vrp import ItineraryGenerator
 from components.place import Place
@@ -33,6 +34,7 @@ app = flask.Flask(__name__)
 
 @app.route('/api/generateitinerary/', methods = ['POST'])
 def api_generateitinerary():
+    start = t.time()
     req_body = flask.request.get_json()
     places = []
     start_time = str_to_time(req_body['start_time'])
@@ -46,6 +48,8 @@ def api_generateitinerary():
         types = None
         if place['category_code'] == "ATTRACTION":
             types = place['attraction_types']
+        elif place['category_code'] == "RESTAURANT":
+            types = place['cuisine_types']
 
         places.append(
             Place(place['place_id'], place['place_name'], place['category_code'], place['latitude'], place['longitude'],
@@ -62,5 +66,6 @@ def api_generateitinerary():
     itinerary['co_travelers'] = req_body['co_travelers']
     itinerary['owner'] = req_body['owner']
     print(json.dumps(itinerary, indent=2))
+    print("ELAPSED TIME:", t.time() - start)
 
     return json.dumps(itinerary)

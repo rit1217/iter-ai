@@ -124,34 +124,32 @@ class BasicACO:
                 self.best_wait_time = ants[int(best_index)].wait_time
                 self.best_ants.append(ants[int(best_index)])
 
-                # print('PATH DISTS', paths_distance, best_index)
                 self.best_score = scores[best_index]
                 self.best_travel_distance = ants[int(best_index)].total_travel_distance
                 self.best_vehicle_num = self.best_path.count(0) - 1
                 start_iteration = iter
 
-                # print('\n')
-                # print('[iteration %d]: find a improved path, its distance is %f' % (iter, self.best_path_distance))
-                # print('it takes %0.3f second multiple_ant_colony_system running' % (time.time() - start_time_total))
                 cur_date = datetime(start_date.year, start_date.month, start_date.day)
                 cur_time = add_time(start_time, time(self.best_wait_time[0] // 60, self.best_wait_time[0] % 60))
                 temp = []
                 wait_time_ind = 0
+                travel_time_ind = 1
                 print('\n\nBEST_PATHHH: ', self.best_path)
                 print('SCORE:', self.best_score)
                 print('TRAVEL_TIME', self.best_travel_time)
                 print('WAIT_TIME', self.best_wait_time)
-                # print('BEST_PATH_DIST', self.best_path_distance)
                 for ind, i in enumerate(self.best_path):
                     cur_node = self.graph.nodes[i]
                     cur_place = self.graph.nodes[i].place
                     if ind < len(self.best_path) - 1:
                         next_place = self.graph.nodes[self.best_path[ind+1]].place
-                        if cur_place.category == "ACCOMMODATION" and next_place.category == "ACCOMMODATION":
+                        if self.best_travel_time[travel_time_ind] == 0:
                             travel_time = {}
+                            travel_time_ind += 1
                         else:
-                            travel_time = {next_place.place_id: self.best_travel_time[ind+1] - self.best_wait_time[wait_time_ind]}
+                            travel_time = {next_place.place_id: self.best_travel_time[travel_time_ind] - self.best_wait_time[wait_time_ind]}
                             wait_time_ind += 1
+                            travel_time_ind += 1
                     else:
                         next_place = None
                         travel_time = {}
@@ -176,7 +174,16 @@ class BasicACO:
                             day_start_time = start_time
                         cur_time = add_time(day_start_time, time(minute // 60, minute % 60))
                         cur_date += timedelta(days=1)
-                        # print('\n\n', cur_date)
+                        if ind < len(self.best_path) - 1:
+                            next_place = self.graph.nodes[self.best_path[ind+1]].place
+
+                            travel_time = {next_place.place_id: self.best_travel_time[travel_time_ind] - self.best_wait_time[wait_time_ind]}
+                            wait_time_ind += 1
+                            travel_time_ind += 1
+                        else:
+                            next_place = None
+                            travel_time = {}
+                        
                         temp = [Agenda(cur_place, cur_date
                                        , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
                                        , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)

@@ -95,7 +95,6 @@ class Ant:
         ready_time = next_node.ready_time[DAY_OF_WEEK[self.day.weekday()]]
         due_time = next_node.due_time[DAY_OF_WEEK[self.day.weekday()]]
 
-
         if  arrive_time + service_time > self.graph.nodes[0].due_time[DAY_OF_WEEK[self.day.weekday()]]:
             return False
 

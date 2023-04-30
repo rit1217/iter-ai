@@ -133,11 +133,14 @@ class BasicACO:
                 cur_time = add_time(start_time, time(self.best_wait_time[0] // 60, self.best_wait_time[0] % 60))
                 temp = []
                 wait_time_ind = 0
+
                 travel_time_ind = 1
+
                 print('\n\nBEST_PATHHH: ', self.best_path)
                 print('SCORE:', self.best_score)
                 print('TRAVEL_TIME', self.best_travel_time)
                 print('WAIT_TIME', self.best_wait_time)
+
                 for ind, i in enumerate(self.best_path):
                     cur_node = self.graph.nodes[i]
                     cur_place = self.graph.nodes[i].place

@@ -57,9 +57,6 @@ def nearest_place(lst1, lst2):
             best_dist = dist
 
     return nearest_place
-    
-    dt = datetime.strptime(instr, TIME_FORMAT)
-    return time(dt.hour, dt.minute, dt.second)
 
 def row_to_dict(row):
     return row.to_dict()

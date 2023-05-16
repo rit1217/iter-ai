@@ -21,3 +21,11 @@ def str_to_time(instr):
 
 def row_to_dict(row):
     return row.to_dict()
+
+def process_strings(strings):
+    whitelist = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&')
+    processed_strings = []
+    for string in strings:
+        processed_strings.append(''.join(filter(whitelist.__contains__, string)).rstrip().lower())
+    
+    return processed_strings

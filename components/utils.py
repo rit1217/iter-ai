@@ -17,8 +17,8 @@ def str_to_datetime(instr):
 
 
 def str_to_time(instr):
-        dt = datetime.strptime(instr, TIME_FORMAT)
-        return time(dt.hour, dt.minute, dt.second)
+    dt = datetime.strptime(instr, TIME_FORMAT)
+    return time(dt.hour, dt.minute, dt.second)
 
 
 def sphericalDistance(lat1, lon1, lat2, lon2 ) :

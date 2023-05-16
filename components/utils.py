@@ -58,8 +58,10 @@ def nearest_place(lst1, lst2):
 
     return nearest_place
 
+
 def row_to_dict(row):
     return row.to_dict()
+
 
 def process_strings(strings):
     whitelist = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&')

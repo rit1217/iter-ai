@@ -123,20 +123,38 @@ class PlaceRecommender:
         candidates_id = []
         columns = ['place_id', 'place_name', 'cuisine_types', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
 
-        df_place = pd.read_csv(DATA_FILEPATHS['place'])
-        df_ophr = pd.read_csv(DATA_FILEPATHS['opening_hour'])
-        df_place_pop = pd.read_csv(DATA_FILEPATHS['place_popularity'])
-        df_cuisine_types = pd.read_csv(DATA_FILEPATHS['cuisine_type'])
+        connection_url = f"postgresql://data:data@dev.se.kmitl.ac.th:54330/data"
+        engine = create_engine(connection_url)
+
+        with engine.connect() as connection:
+            query = text(
+                "SELECT p.place_id, p.place_name, p.latitude, p.longitude, p.category_code, p.destination, \
+                    c_t.cuisine_types, \
+                    po.popularity, \
+                    json_agg(json_build_object('day', oh.day, 'opening_time', oh.opening_time, 'closing_time', oh.closing_time) \
+                        ORDER BY CASE oh.day WHEN 'Sunday' THEN 1 WHEN 'Monday' THEN 2 WHEN 'Tuesday' THEN 3 WHEN 'Wednesday' THEN 4 \
+                        WHEN 'Thursday' THEN 5 WHEN 'Friday' THEN 6 WHEN 'Saturday' THEN 7 ELSE 8 END) \
+                    AS opening_hours \
+                FROM ( \
+                    SELECT place_id, place_name, latitude, longitude, category_code, destination \
+                    FROM place \
+                    WHERE category_code = 'RESTAURANT' \
+                ) p \
+                LEFT JOIN ( \
+                    SELECT place_id, ARRAY_AGG(description) AS cuisine_types\
+                    FROM cuisine_type \
+                    GROUP BY place_id \
+                ) c_t ON p.place_id = c_t.place_id \
+                LEFT JOIN opening_hour oh ON p.place_id = oh.place_id \
+                LEFT JOIN popularity po ON p.place_id = po.place_id AND p.place_name = po.place_name AND p.destination = po.destination \
+                GROUP BY p.place_id, p.place_name, p.latitude, p.longitude, p.category_code, p.destination, c_t.cuisine_types, po.popularity;"
+            )
+            result = connection.execute(query)
+
+        restaurants = pd.DataFrame(result.fetchall(), columns=result.keys())
+        restaurants = restaurants[restaurants.destination == destination]
         
-        df_place = df_place[df_place.category_code == "RESTAURANT"]
-        df_cuisine_types = df_cuisine_types.groupby(['place_id']).agg({'description': list}).reset_index()
-        grouped = df_ophr.groupby(['place_id']).apply(lambda x: x[['day', 'opening_time', 'closing_time']].apply(row_to_dict, axis=1).tolist()).reset_index(name='opening_hours')
-
-        df_merged = pd.merge(df_place, df_cuisine_types, how="left", on="place_id")
-        df_merged = pd.merge(df_merged, grouped, on='place_id', how='left')
-        df_merged = pd.merge(df_merged, df_place_pop, how="left", on=["place_id", "place_name", "destination"])
-        df_merged.rename(columns={'description': 'cuisine_types'}, inplace=True)
-
+        selection_pool = restaurants[~restaurants.cuisine_types.isna()]
         for cuisine in cuisine_types:
             mask = (df_merged[~df_merged.cuisine_types.isna()].
                     cuisine_types.apply(lambda row: cuisine in row))

@@ -156,16 +156,15 @@ class PlaceRecommender:
         
         selection_pool = restaurants[~restaurants.cuisine_types.isna()]
         for cuisine in cuisine_types:
-            mask = (df_merged[~df_merged.cuisine_types.isna()].
-                    cuisine_types.apply(lambda row: cuisine in row))
-            temp_df = df_merged[~df_merged.cuisine_types.isna()]
-            candidates_id.append(self._roulette_selector(temp_df[mask].copy(), size=num_dist))
-            
-        candidates_id = np.concatenate(candidates_id)
+            mask = selection_pool.cuisine_types.apply(lambda row: cuisine in row)
+            selection = self._roulette_selector(selection_pool[mask].copy(), size=min(num_dist, len(selection_pool[mask])))
+            candidates_id.extend(selection)
 
         if len(candidates_id) < top_n:
-            candidates_id = np.concatenate((candidates_id, self._roulette_selector(df_merged[~df_merged.cuisine_types.isna()].copy(), size=top_n-len(candidates_id))))
+            remaining_candidates = self._roulette_selector(selection_pool[~selection_pool.place_id.isin(candidates_id)].copy(),
+                                                        size=top_n - len(candidates_id))
+            candidates_id.extend(remaining_candidates)
 
-        df_candidates = df_merged[df_merged.place_id.isin(candidates_id)]
+        df_candidates = restaurants[restaurants.place_id.isin(candidates_id)]
+        print(len(df_candidates))
         return df_candidates[columns[:len(columns)-1]][:top_n]
-            

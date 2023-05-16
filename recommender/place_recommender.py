@@ -9,6 +9,14 @@ from components.utils import process_strings
 
 class PlaceRecommender:
     
+    def _calc_dist(self, user_vec, place_vec):
+        distances = place_vec.loc[:, place_vec.columns != 'place_id'].apply(lambda row: self._dist(row, user_vec.values.flatten()), axis=1)
+        df = place_vec.copy()
+        df['score'] = distances
+        return df
+
+    def _dist(self, vec_a, vec_b):
+        return sqrt(sum((e1-e2)**2 for e1, e2 in zip(vec_a, vec_b)))
     
     def _roulette_selector(self, places, size=15):
         pop_fitness = places['popularity'].sum()

@@ -15,7 +15,7 @@ def api_recommendplace():
 
     return json.dumps({"places":recommended_places.to_dict('records')}, indent=4)
 
-@app.route('/api/recommendrestaurant', methods = ['POST'])
+@app.route('/api/recommendrestaurant/', methods = ['POST'])
 def api_recommendrestaurant():
     req_body = flask.request.get_json()
     recommended_restaurant = PlaceRecommender().recommend_restaurant(req_body['cuisines'], req_body['destination'], req_body['top_n'])

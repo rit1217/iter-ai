@@ -28,37 +28,48 @@ class PlaceRecommender:
         # df = pd.read_csv(DATA_FILEPATHS['place_with_type'])
         candidates_count = len(features)
         candidates_id = []
+        features = process_strings(features)
+        activities = process_strings(activities)
+
+        connection_url = f"postgresql://data:data@dev.se.kmitl.ac.th:54330/data"
+        engine = create_engine(connection_url)
+
+        with engine.connect() as connection:
+            query = text(
+                "SELECT p.place_id, p.place_name, p.latitude, p.longitude, p.category_code, p.destination, \
+                    a_t.attraction_types, \
+                    a.activities, \
+                    po.popularity, \
+                    json_agg(json_build_object('day', oh.day, 'opening_time', oh.opening_time, 'closing_time', oh.closing_time) \
+                        ORDER BY CASE oh.day WHEN 'Sunday' THEN 1 WHEN 'Monday' THEN 2 WHEN 'Tuesday' THEN 3 WHEN 'Wednesday' THEN 4 \
+                        WHEN 'Thursday' THEN 5 WHEN 'Friday' THEN 6 WHEN 'Saturday' THEN 7 ELSE 8 END) \
+                    AS opening_hours \
+                FROM ( \
+                    SELECT place_id, place_name, latitude, longitude, category_code, destination \
+                    FROM place \
+                    WHERE category_code = 'ATTRACTION' \
+                ) p \
+                LEFT JOIN ( \
+                    SELECT place_id, ARRAY_AGG(description) AS attraction_types \
+                    FROM attraction_type \
+                    GROUP BY place_id \
+                ) a_t ON p.place_id = a_t.place_id \
+                LEFT JOIN ( \
+                    SELECT place_id, ARRAY_AGG(description) AS activities \
+                    FROM activity \
+                    GROUP BY place_id \
+                ) a ON p.place_id = a.place_id \
+                LEFT JOIN opening_hour oh ON p.place_id = oh.place_id \
+                LEFT JOIN popularity po ON p.place_id = po.place_id AND p.place_name = po.place_name AND p.destination = po.destination \
+                GROUP BY p.place_id, p.place_name, p.latitude, p.longitude, p.category_code, p.destination, a_t.attraction_types, a.activities, po.popularity;"
+            )
+            result = connection.execute(query)
+
+        attractions = pd.DataFrame(result.fetchall(), columns=result.keys())
+        attractions = attractions[attractions.destination == destination]
         columns = ['place_id', 'place_name', 'attraction_types', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
-        
-        df_place = pd.read_csv(DATA_FILEPATHS['place'])
-        df_activity = pd.read_csv(DATA_FILEPATHS['activity'])
-        df_atr_type = pd.read_csv(DATA_FILEPATHS['attraction_type'])
-        df_place_pop = pd.read_csv(DATA_FILEPATHS['place_popularity'])
-        df_ophr = pd.read_csv(DATA_FILEPATHS['opening_hour'])
+        place_ids = attractions.place_id.tolist()
 
-        df_place = df_place[df_place.category_code == "ATTRACTION"]
-        df_atr_type = df_atr_type.groupby(['place_id']).agg({'description': list}).reset_index()
-        df_activity = df_activity.groupby(['place_id']).agg({'description': list}).reset_index()
-
-        df_merged = pd.merge(df_place, df_atr_type, how="left", on="place_id")
-        df_merged = pd.merge(df_merged, df_activity, how="left", on="place_id")
-        df_merged = pd.merge(df_merged, df_place_pop, how="left", on=["place_id", "place_name", "destination"])
-        df_merged.rename(columns={'description_x': 'attraction_types', 'description_y': 'activities'}, inplace=True)
-        
-        grouped = df_ophr.groupby(['place_id']).apply(lambda x: x[['day', 'opening_time', 'closing_time']].apply(row_to_dict, axis=1).tolist()).reset_index(name='opening_hours')
-        df_merged = pd.merge(df_merged, grouped, on='place_id', how='left')
-
-        df_merged.attraction_types = df_merged.attraction_types.apply(lambda x: x if isinstance(x, list) else [])
-        df_merged = df_merged[columns]
-
-        for feature in features:
-            mask = (df_merged[~df_merged.attraction_types.isna()].
-                    attraction_types.apply(lambda row: feature in row))
-            candidates_id.append(self._roulette_selector(df_merged[mask].copy()))
-
-        candidates = self._calc_feature_sim(features, 'attraction_types', df_merged)
-        candidates_id += candidates['place_id'].values.tolist()[:top_n-candidates_count]
-        df_candidates = df_merged[df_merged.place_id.isin(candidates_id)]
 
         return df_candidates[columns[:len(columns)-1]][:top_n]
 

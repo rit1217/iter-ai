@@ -58,3 +58,16 @@ def nearest_place(lst1, lst2):
 
     return nearest_place
     
+    dt = datetime.strptime(instr, TIME_FORMAT)
+    return time(dt.hour, dt.minute, dt.second)
+
+def row_to_dict(row):
+    return row.to_dict()
+
+def process_strings(strings):
+    whitelist = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&')
+    processed_strings = []
+    for string in strings:
+        processed_strings.append(''.join(filter(whitelist.__contains__, string)).rstrip().lower())
+    
+    return processed_strings

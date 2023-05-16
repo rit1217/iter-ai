@@ -70,8 +70,56 @@ class PlaceRecommender:
         columns = ['place_id', 'place_name', 'attraction_types', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
         place_ids = attractions.place_id.tolist()
 
+        attractions_vec = pd.read_csv(DATA_FILEPATHS['new_attraction_rank_vect'])
+        attractions_vec = attractions_vec[attractions_vec.place_id.isin(place_ids)]
+        candidates = []
+        features_set = features + activities
+        
+        while top_n > 0:
+            if len(features_set) == 0:
+                features_set = features + activities
 
-        return df_candidates[columns[:len(columns)-1]][:top_n]
+            # choose random feature from set of features
+            feature = np.random.choice(features_set)
+            
+            # get pool of attractions if it contain the chosen feature
+            selection_pool = attractions_vec.loc[attractions_vec[feature] > 0, :].sort_values(feature, ascending=False)
+            
+            # create user vector from feature set
+            user_vec = pd.DataFrame(np.zeros((1, len(attractions_vec.columns[1:]))), columns=attractions_vec.columns[1:])
+            user_vec.loc[:, features_set] = 1
+
+            # calculate distance between user vector and attractions from selection pool
+            result = self._calc_dist(user_vec, selection_pool).sort_values('score').reset_index(drop=True)
+
+            # find top place that is not in the candidate list
+            result_index = 0
+            complete_iteration = True
+            for index, row in result.iterrows():
+                if row.place_id not in candidates:
+                    result_index = index
+                    complete_iteration = False
+                    break
+            
+            if not complete_iteration:
+                # print(result.loc[result_index, ['place_id', 'score']])
+                # print(features_set)
+                # retrieve feature of selected candidates
+                result_feature = result.columns[result.iloc[result_index].ne(0)]
+                result_feature = result_feature[1: -1]
+
+                # remove feature from feature pool
+                features_set = [item for item in features_set if item not in result_feature]
+                
+                # add place id to candidate list
+                candidates.append(result.loc[result_index, 'place_id'])
+                top_n -= 1
+                # print(candidates)
+        print(attractions)
+        output = attractions[attractions.place_id.isin(candidates)]
+        print(output)
+
+        return output[columns[:len(columns)-1]]
 
     def recommend_restaurant(self, cuisine_types, destination, top_n):
         num_dist = top_n // len(cuisine_types)

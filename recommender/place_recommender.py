@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
+from math import sqrt
 
 from .config import DATA_FILEPATHS
-from components.utils import row_to_dict
+from components.utils import process_strings
 
 
 class PlaceRecommender:

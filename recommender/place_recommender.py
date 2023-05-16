@@ -8,18 +8,7 @@ from components.utils import process_strings
 
 
 class PlaceRecommender:
-
-    def _jaccard_simmilarity(self, A, B):
-        nominator = set(A).intersection(B)
-        denominator = set(A).union(B)
-        similarity = len(nominator)/len(denominator)
-        
-        return similarity
     
-    def _calc_feature_sim(self, features, item_feature, items_list):
-        items_list['similarity_score'] = items_list.apply(lambda x: self._jaccard_simmilarity(features, x[item_feature]), axis=1)
-        
-        return items_list[['place_id', 'similarity_score']].sort_values('similarity_score', ascending=False)
     
     def _roulette_selector(self, places, size=15):
         pop_fitness = places['popularity'].sum()

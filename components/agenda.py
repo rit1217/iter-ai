@@ -22,7 +22,7 @@ class Agenda:
 
     def __str__(self):
         
-        return f'{self.place.place_id} ' + str(self.place) + ' : ' + str(self.arrival_time) + ' - ' + str(self.leave_time) + ' visit for ' + str(self.duration) + f' travel {self.travel_time}'
+        return f'{self.place.place_id} ' + f'{self.place.types} ' + str(self.place) + ' : ' + str(self.arrival_time) + ' - ' + str(self.leave_time) + ' visit for ' + str(self.duration) + f' travel {self.travel_time}'
 
     def arrive_only(self):
         return f'{self.place.place_id} ' + str(self.place) + ' : ARRIVE ' + str(self.arrival_time)+ f' travel {self.travel_time}'
@@ -36,7 +36,7 @@ class Agenda:
             'date': self.date.strftime(DATE_FORMAT),
             'arrival_time': self.arrival_time.strftime(TIME_FORMAT),
             'leave_time': self.leave_time.strftime(TIME_FORMAT),
-            'travel_time': str(self.travel_time)
+            'travel_time': self.travel_time
         }
     
     def check_open_close_time(self):

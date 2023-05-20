@@ -26,11 +26,8 @@ class BasicACO:
         self.best_wait_time = None
         self.best_ants = []
 
-    def run_basic_aco(self, dest, start_date, day_num, start_time, end_time):
-        plan = []
-        itinerary = None  
-
-        for iter in range(self.max_iter):
+    def run_basic_aco(self, dest, start_date, day_num, start_time, end_time):  
+        for _ in range(self.max_iter):
             ants = list(Ant(self.graph, start_date) for _ in range(self.ants_num))
 
             for k in range(self.ants_num):
@@ -56,42 +53,9 @@ class BasicACO:
                         if not flag:
                             next_index = 0
                             unused_depot_count -= 1
-                        elif ants[k].travel_path[-1] == ants[k].start_index:
-                            pass
-
-                    elif ants[k].travel_path[-1] == ants[k].start_index:
-                        pass
 
                     ants[k].move_to_next_index(next_index)
-
-                    if ants[k].check_empty_fleet() and not ants[k].index_to_visit_empty():
-                        ants[k].travel_path = ants[k].travel_path[:-1]
-                        ants[k].wait_time = ants[k].wait_time[:-1]
-                        unused_depot_count += 1
-
-                        wait_time = float('inf')
-                        next_index = None
-                        for ind in ants[k].index_to_visit:
-                            temp_wait_time = self.graph.nodes[ind].ready_time[DAY_OF_WEEK[ants[k].day.weekday()]]
-                            if temp_wait_time >= self.graph.meal_time[ants[k].day_meals[0]][0] and \
-                                temp_wait_time <= self.graph.meal_time[ants[k].day_meals[0]][1] and \
-                                    self.graph.nodes[ind].place.category != 'RESTAURANT':
-                                continue
-
-                            if temp_wait_time < wait_time:
-                                wait_time = temp_wait_time
-                                next_index = ind
-
-                        # wait_time = self.graph.nodes[ants[k].index_to_visit[0]].ready_time
-                        # next_index = ants[k].index_to_visit[0]
-                        # for ind in ants[k].index_to_visit[1:]:
-                        #     ind_ready_time = self.graph.nodes[ind].ready_time
-                        #     if ind_ready_time < wait_time:
-                        #         wait_time = ind_ready_time
-                        #         next_index = ind
-
-                        ants[k].move_to_next_index(next_index)
-
+            
                     ants[k].graph.local_update_pheromone(ants[k].current_index, next_index)
 
                 if ants[k].travel_path[-1] != 0:
@@ -113,77 +77,9 @@ class BasicACO:
                 self.best_travel_distance = ants[int(best_index)].total_travel_distance
                 self.best_vehicle_num = self.best_path.count(0) - 1
 
-                print('\n\nBEST_PATHHH: ', self.best_path)
-                print('SCORE:', self.best_score)
-                print('TRAVEL_TIME', self.best_travel_time)
-                print('WAIT_TIME', self.best_wait_time)
-
-                cur_date = datetime(start_date.year, start_date.month, start_date.day)
-                cur_time = add_time(start_time, time(self.best_wait_time[0] // 60, self.best_wait_time[0] % 60))
-                temp = []
-                wait_time_ind = 0
-
-                travel_time_ind = 1
-
-                for ind, i in enumerate(self.best_path):
-                    cur_node = self.graph.nodes[i]
-                    cur_place = self.graph.nodes[i].place
-                    if ind < len(self.best_path) - 1:
-                        next_place = self.graph.nodes[self.best_path[ind+1]].place
-                        if self.best_travel_time[travel_time_ind] == 0:
-                            travel_time = {}
-                            travel_time_ind += 1
-                        else:
-                            travel_time = {next_place.place_id: int(self.best_travel_time[travel_time_ind] - self.best_wait_time[wait_time_ind])}
-                            wait_time_ind += 1
-                            travel_time_ind += 1
-                    else:
-                        next_place = None
-                        travel_time = {}
-                    service_time = cur_node.service_time
-                    leave_time = add_time(cur_time, time(service_time // 60, service_time % 60))
-                    temp.append(Agenda(cur_place, cur_date
-                                       , datetime(cur_date.year, cur_date.month, cur_date.day, cur_time.hour, cur_time.minute, cur_time.second)
-                                       ,datetime(cur_date.year, cur_date.month, cur_date.day, leave_time.hour, leave_time.minute, leave_time.second)
-                                        ,travel_time))
-                    if ind == len(self.best_path) - 1:
-                        minute = service_time
-                    else:
-                        minute = service_time + self.graph.node_dist_mat[i][self.best_path[ind+1]]
-                    cur_time = add_time(cur_time, time(minute // 60, minute % 60))
-
-                    if i == 0 and ind != 0:
-                        plan.append(temp)
-
-                        if ind != len(self.best_path) - 1:
-                            day_start_time = add_time(start_time, time(self.best_wait_time[ind] // 60, self.best_wait_time[ind] % 60))
-                        else:
-                            day_start_time = start_time
-                        cur_time = add_time(day_start_time, time(minute // 60, minute % 60))
-                        cur_date += timedelta(days=1)
-                        if ind < len(self.best_path) - 1:
-                            next_place = self.graph.nodes[self.best_path[ind+1]].place
-
-                            travel_time = {next_place.place_id: int(self.best_travel_time[travel_time_ind] - self.best_wait_time[wait_time_ind])}
-                            wait_time_ind += 1
-                            travel_time_ind += 1
-                        else:
-                            next_place = None
-                            travel_time = {}
-                        
-                        temp = [Agenda(cur_place, cur_date
-                                       , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
-                                       , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
-                                       , travel_time)]
-                        
-
-                itinerary = Itinerary(dest, start_date, start_date + timedelta(days=len(plan) - 1), start_time, end_time, plan)
-                plan = []
-
             self.graph.global_update_pheromone(self.best_path, self.best_score)
-           
 
-        return itinerary
+        return self.construct_itinerary(dest, start_date, start_time, end_time)
         
     def select_next_index(self, ant):
         
@@ -281,6 +177,73 @@ class BasicACO:
         # print(score)
         # print()
         return score
+    
+    def construct_itinerary(self, dest, start_date, start_time, end_time):
+        plan = []
+        print('\n\nBEST_PATHHH: ', self.best_path)
+        print('SCORE:', self.best_score)
+        print('TRAVEL_TIME', self.best_travel_time)
+        print('WAIT_TIME', self.best_wait_time)
+
+        cur_date = datetime(start_date.year, start_date.month, start_date.day)
+        cur_time = add_time(start_time, time(self.best_wait_time[0] // 60, self.best_wait_time[0] % 60))
+        temp = []
+        wait_time_ind = 0
+
+        travel_time_ind = 0
+        for ind, i in enumerate(self.best_path):
+            print(ind, travel_time_ind)
+            cur_node = self.graph.nodes[i]
+            cur_place = self.graph.nodes[i].place
+            if ind < len(self.best_path) - 1:
+                next_place = self.graph.nodes[self.best_path[ind+1]].place
+                if i == 0 and ind != 0:
+                    travel_time = {}
+                else:
+                    travel_time = {next_place.place_id: int(self.best_travel_time[travel_time_ind] - self.best_wait_time[wait_time_ind])}
+                    wait_time_ind += 1
+                    travel_time_ind += 1
+            else:
+                next_place = None
+                travel_time = {}
+            service_time = cur_node.service_time
+            leave_time = add_time(cur_time, time(service_time // 60, service_time % 60))
+            temp.append(Agenda(cur_place, cur_date
+                                , datetime(cur_date.year, cur_date.month, cur_date.day, cur_time.hour, cur_time.minute, cur_time.second)
+                                ,datetime(cur_date.year, cur_date.month, cur_date.day, leave_time.hour, leave_time.minute, leave_time.second)
+                                ,travel_time))
+            if ind == len(self.best_path) - 1:
+                minute = service_time
+            else:
+                minute = service_time + self.graph.node_dist_mat[i][self.best_path[ind+1]]
+            cur_time = add_time(cur_time, time(minute // 60, minute % 60))
+
+            if i == 0 and ind != 0:
+                plan.append(temp)
+
+                if ind != len(self.best_path) - 1:
+                    day_start_time = add_time(start_time, time(self.best_wait_time[ind] // 60, self.best_wait_time[ind] % 60))
+                else:
+                    day_start_time = start_time
+                cur_time = add_time(day_start_time, time(minute // 60, minute % 60))
+                cur_date += timedelta(days=1)
+                if ind < len(self.best_path) - 1:
+                    next_place = self.graph.nodes[self.best_path[ind+1]].place
+
+                    travel_time = {next_place.place_id: int(self.best_travel_time[travel_time_ind] - self.best_wait_time[wait_time_ind])}
+                    wait_time_ind += 1
+                    travel_time_ind += 1
+                else:
+                    next_place = None
+                    travel_time = {}
+                
+                temp = [Agenda(cur_place, cur_date
+                                , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
+                                , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
+                                , travel_time)]
+                
+
+        return Itinerary(dest, start_date, start_date + timedelta(days=len(plan) - 1), start_time, end_time, plan)
 
 
 

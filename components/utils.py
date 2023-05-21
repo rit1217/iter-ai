@@ -17,8 +17,8 @@ def str_to_datetime(instr):
 
 
 def str_to_time(instr):
-        dt = datetime.strptime(instr, TIME_FORMAT)
-        return time(dt.hour, dt.minute, dt.second)
+    dt = datetime.strptime(instr, TIME_FORMAT)
+    return time(dt.hour, dt.minute, dt.second)
 
 
 def sphericalDistance(lat1, lon1, lat2, lon2 ) :
@@ -57,4 +57,16 @@ def nearest_place(lst1, lst2):
             best_dist = dist
 
     return nearest_place
+
+
+def row_to_dict(row):
+    return row.to_dict()
+
+
+def process_strings(strings):
+    whitelist = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ&')
+    processed_strings = []
+    for string in strings:
+        processed_strings.append(''.join(filter(whitelist.__contains__, string)).rstrip().lower())
     
+    return processed_strings

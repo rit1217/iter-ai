@@ -236,7 +236,7 @@ class BasicACO:
                 else:
                     next_place = None
                     travel_time = {}
-                
+                print(ind, cur_place, cur_place.category, '\n')
                 temp = [Agenda(cur_place, cur_date
                                 , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
                                 , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)

@@ -93,7 +93,7 @@ class Ant:
         arrive_time = self.vehicle_travel_time + dist
 
         due_time = next_node.due_time[DAY_OF_WEEK[self.day.weekday()]]
-
+        # print('\n', next_node.place.place_name, arrive_time + service_time, self.graph.nodes[0].due_time)
         if  arrive_time + service_time > self.graph.nodes[0].due_time[DAY_OF_WEEK[self.day.weekday()]]:
             return False
 

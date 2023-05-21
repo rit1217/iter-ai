@@ -2,9 +2,10 @@ import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine, text
 from math import sqrt
+import os
 
 from .config import DATA_FILEPATHS
-from components.utils import process_strings
+from components.utils import *
 
 
 class PlaceRecommender:
@@ -28,7 +29,7 @@ class PlaceRecommender:
         features = process_strings(features)
         activities = process_strings(activities)
 
-        connection_url = f"postgresql://data:data@dev.se.kmitl.ac.th:54330/data"
+        connection_url = os.getenv('DB_URL')
         engine = create_engine(connection_url)
 
         with engine.connect() as connection:
@@ -124,7 +125,7 @@ class PlaceRecommender:
         candidates_id = []
         columns = ['place_id', 'place_name', 'cuisine_types', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
 
-        connection_url = f"postgresql://data:data@dev.se.kmitl.ac.th:54330/data"
+        connection_url = os.getenv('DB_URL')
         engine = create_engine(connection_url)
 
         with engine.connect() as connection:
@@ -169,3 +170,33 @@ class PlaceRecommender:
         df_candidates = restaurants[restaurants.place_id.isin(candidates_id)]
         print(len(df_candidates))
         return df_candidates[columns[:len(columns)-1]][:top_n]
+    
+    def recommend_accommodation(self, other_places):
+        columns = ['place_id', 'place_name', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
+
+        connection_url = os.getenv('DB_URL')
+        engine = create_engine(connection_url)
+
+        with engine.connect() as connection:
+            query = text(
+                "SELECT p.place_id, p.place_name, p.latitude, p.longitude, p.category_code, p.destination, \
+                    po.popularity, \
+                    json_agg(json_build_object('day', oh.day, 'opening_time', oh.opening_time, 'closing_time', oh.closing_time) \
+                        ORDER BY CASE oh.day WHEN 'Sunday' THEN 1 WHEN 'Monday' THEN 2 WHEN 'Tuesday' THEN 3 WHEN 'Wednesday' THEN 4 \
+                        WHEN 'Thursday' THEN 5 WHEN 'Friday' THEN 6 WHEN 'Saturday' THEN 7 ELSE 8 END) \
+                    AS opening_hours \
+                FROM ( \
+                    SELECT place_id, place_name, latitude, longitude, category_code, destination \
+                    FROM place \
+                    WHERE category_code = 'ACCOMMODATION' \
+                ) p \
+                LEFT JOIN opening_hour oh ON p.place_id = oh.place_id \
+                LEFT JOIN popularity po ON p.place_id = po.place_id AND p.place_name = po.place_name AND p.destination = po.destination \
+                GROUP BY p.place_id, p.place_name, p.latitude, p.longitude, p.category_code, p.destination, po.popularity;"
+            )
+            result = connection.execute(query)
+
+        accom_list = pd.DataFrame(result.fetchall(), columns=result.keys())
+        accom_list = accom_list[columns]
+
+        return nearest_place(other_places, accom_list.to_dict('records'))

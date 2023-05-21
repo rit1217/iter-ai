@@ -85,21 +85,19 @@ class Ant:
 
     def check_condition(self, next_index) -> bool:
         next_node = self.graph.nodes[next_index]
-
-        dist = self.graph.node_dist_mat[self.current_index][next_index]
-        # wait_time = max(ready_time - self.vehicle_travel_time - dist, 0)
+        
+        self.graph.temp_dist_mat = self.cal_temp_dist_mat(self.vehicle_travel_time)
+        dist = self.graph.temp_dist_mat[self.current_index][next_index]
 
         service_time = next_node.service_time
         arrive_time = self.vehicle_travel_time + dist
 
-        ready_time = next_node.ready_time[DAY_OF_WEEK[self.day.weekday()]]
         due_time = next_node.due_time[DAY_OF_WEEK[self.day.weekday()]]
-
+        # print('\n', next_node.place.place_name, arrive_time + service_time, self.graph.nodes[0].due_time)
         if  arrive_time + service_time > self.graph.nodes[0].due_time[DAY_OF_WEEK[self.day.weekday()]]:
             return False
 
-        if arrive_time < ready_time or \
-            arrive_time + service_time > due_time:
+        if arrive_time + service_time > due_time:
             return False
         
         if arrive_time >= self.graph.meal_time[self.day_meals[0]][0] and \

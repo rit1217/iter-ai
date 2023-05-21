@@ -17,6 +17,12 @@ def str_to_datetime(instr):
 
 
 def str_to_time(instr):
+
+    if instr == 'closed':
+        instr = "00:00:00"
+    elif len(instr) < 7:
+        instr += ":00"
+
     dt = datetime.strptime(instr, TIME_FORMAT)
     return time(dt.hour, dt.minute, dt.second)
 
@@ -43,9 +49,9 @@ def nearest_place(lst1, lst2):
     lat = [ place['latitude'] for place in lst1]
     lng = [ place['longitude'] for place in lst1]
 
-    center = { 'latitude': (max(lat) - min(lat)) / 2,
-              'longitude': (max(lng) - min(lng)) / 2}
-    
+    center = { 'latitude': min(lat) + ((max(lat) - min(lat)) / 2),
+              'longitude': min(lng) + ((max(lng) - min(lng)) / 2)}
+
     nearest_place = lst2[0]
     best_dist = sphericalDistance(center['latitude'], center['longitude'],
                                    nearest_place['latitude'], nearest_place['longitude'] )

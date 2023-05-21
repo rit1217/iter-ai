@@ -60,14 +60,15 @@ class PlaceRecommender:
                 LEFT JOIN popularity po ON p.place_id = po.place_id AND p.place_name = po.place_name AND p.destination = po.destination \
                 GROUP BY p.place_id, p.place_name, p.latitude, p.longitude, p.category_code, p.destination, a_t.attraction_types, a.activities, po.popularity;"
             )
-            result = connection.execute(query)
+            result_attractions = connection.execute(query)
+            result_rank_vect = connection.execute(text("SELECT * FROM attraction_rank_vector;"))
 
-        attractions = pd.DataFrame(result.fetchall(), columns=result.keys())
+        attractions = pd.DataFrame(result_attractions.fetchall(), columns=result_attractions.keys())
         attractions = attractions[attractions.destination == destination]
         columns = ['place_id', 'place_name', 'attraction_types', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
         place_ids = attractions.place_id.tolist()
 
-        attractions_vec = pd.read_csv(DATA_FILEPATHS['new_attraction_rank_vect'])
+        attractions_vec = pd.DataFrame(result_rank_vect.fetchall(), columns=result_rank_vect.keys())
         attractions_vec = attractions_vec[attractions_vec.place_id.isin(place_ids)]
         candidates = []
         features_set = features + activities

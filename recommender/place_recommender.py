@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine, text
 from math import sqrt
+import os
 
 from .config import DATA_FILEPATHS
 from components.utils import *
@@ -28,7 +29,7 @@ class PlaceRecommender:
         features = process_strings(features)
         activities = process_strings(activities)
 
-        connection_url = f"postgresql://data:data@dev.se.kmitl.ac.th:54330/data"
+        connection_url = os.getenv('DB_URL')
         engine = create_engine(connection_url)
 
         with engine.connect() as connection:
@@ -124,7 +125,7 @@ class PlaceRecommender:
         candidates_id = []
         columns = ['place_id', 'place_name', 'cuisine_types', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
 
-        connection_url = f"postgresql://data:data@dev.se.kmitl.ac.th:54330/data"
+        connection_url = os.getenv('DB_URL')
         engine = create_engine(connection_url)
 
         with engine.connect() as connection:
@@ -173,7 +174,7 @@ class PlaceRecommender:
     def recommend_accommodation(self, other_places):
         columns = ['place_id', 'place_name', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
 
-        connection_url = f"postgresql://data:data@dev.se.kmitl.ac.th:54330/data"
+        connection_url = os.getenv('DB_URL')
         engine = create_engine(connection_url)
 
         with engine.connect() as connection:

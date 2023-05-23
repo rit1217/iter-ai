@@ -35,24 +35,7 @@ class BasicACO:
                 
                 while not ants[k].index_to_visit_empty() and unused_depot_count > 0:
 
-                    next_index = self.select_next_index(ants[k])
-                    wait_time = self.graph.temp_dist_mat[ants[k].current_index][next_index] - \
-                        self.graph.node_dist_mat[ants[k].current_index][next_index]
-
-                    if not ants[k].check_condition(next_index):
-
-                        temp = ants[k].index_to_visit[:]
-                        flag = False
-                        for n in temp:
-                            cond = ants[k].check_condition(n)
-                            if cond:
-                                flag = True
-                                next_index = n
-                                break
-
-                        if not flag:
-                            next_index = 0
-                            unused_depot_count -= 1
+                    next_index, unused_depot_count = self.select_next_index(ants[k], unused_depot_count)
 
                     ants[k].move_to_next_index(next_index)
             
@@ -81,34 +64,43 @@ class BasicACO:
 
         return self.construct_itinerary(dest, start_date, start_time, end_time)
         
-    def select_next_index(self, ant):
+    def select_next_index(self, ant, unused_depot_count):
         
         current_index = ant.current_index
         index_to_visit = ant.index_to_visit
         if len(index_to_visit) == 0:
-            return 0
-        
-        distance_mat = ant.cal_temp_dist_mat(ant.vehicle_travel_time)
-        
-        self.graph.temp_dist_mat = distance_mat
-        ant.graph.temp_dist_mat = distance_mat
+            return 0, unused_depot_count - 1
 
-        # print('\n dist', distance_mat)
-
-        closeness = 1 / distance_mat
-        # print('\n closeness', closeness)
-
-        transition_prob = self.graph.pheromone_mat[current_index][index_to_visit] * \
-            np.power(closeness[current_index][index_to_visit], self.beta)
-        # print('\ntrans', transition_prob)
-        transition_prob = transition_prob / np.sum(transition_prob)
-        # print(current_index, index_to_visit,transition_prob)
-        if np.random.rand() < self.q0:
-            next_index = np.random.choice(index_to_visit, p=transition_prob)
         else:
-            next_index = BasicACO.stochastic_accept(index_to_visit, transition_prob)
+        
+            distance_mat = ant.cal_temp_dist_mat(ant.vehicle_travel_time)
+            
+            self.graph.temp_dist_mat = distance_mat
+            ant.graph.temp_dist_mat = distance_mat
+            closeness = 1 / distance_mat
+            transition_prob = self.graph.pheromone_mat[current_index][index_to_visit] * \
+                np.power(closeness[current_index][index_to_visit], self.beta)
+            transition_prob = transition_prob / np.sum(transition_prob)
 
-        return next_index
+            if np.random.rand() < self.q0:
+                next_index = np.random.choice(index_to_visit, p=transition_prob)
+            else:
+                next_index = BasicACO.stochastic_accept(index_to_visit, transition_prob)
+
+            if not ant.check_condition(next_index):
+                    temp = [x for _, x in sorted(zip(transition_prob, index_to_visit), reverse=True)]
+                    flag = False
+                    for n in temp:
+                        if ant.check_condition(n):
+                            flag = True
+                            next_index = n
+                            break
+
+                    if not flag:
+                        next_index = 0
+                        unused_depot_count -= 1
+
+        return next_index, unused_depot_count
 
     @staticmethod
     def stochastic_accept(index_to_visit, transition_prob):

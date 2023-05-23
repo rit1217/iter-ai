@@ -1,7 +1,6 @@
 import numpy as np
 import random
-from threading import Event
-from datetime import date, time, datetime, timedelta
+from datetime import time, datetime, timedelta
 
 from .vrptw_base import VrptwGraph
 from .ant import Ant
@@ -65,12 +64,12 @@ class BasicACO:
         return self.construct_itinerary(dest, start_date, start_time, end_time)
         
     def select_next_index(self, ant, unused_depot_count):
-        
         current_index = ant.current_index
         index_to_visit = ant.index_to_visit
-        if len(index_to_visit) == 0:
-            return 0, unused_depot_count - 1
 
+        if ant.index_to_visit_empty():
+            return 0, unused_depot_count - 1
+        
         else:
         
             distance_mat = ant.cal_temp_dist_mat(ant.vehicle_travel_time)
@@ -85,7 +84,7 @@ class BasicACO:
             if np.random.rand() < self.q0:
                 next_index = np.random.choice(index_to_visit, p=transition_prob)
             else:
-                next_index = BasicACO.stochastic_accept(index_to_visit, transition_prob)
+                next_index = self._stochastic_accept(index_to_visit, transition_prob)
 
             if not ant.check_condition(next_index):
                     temp = [x for _, x in sorted(zip(transition_prob, index_to_visit), reverse=True)]
@@ -102,9 +101,8 @@ class BasicACO:
 
         return next_index, unused_depot_count
 
-    @staticmethod
-    def stochastic_accept(index_to_visit, transition_prob):
-        
+    def _stochastic_accept(self, index_to_visit, transition_prob):
+        # stochastic acceptance algorithm
         N = len(index_to_visit)
 
         sum_tran_prob = np.sum(transition_prob)
@@ -163,16 +161,12 @@ class BasicACO:
         distance_score = self.total_time_objective(ant)
         score = {'VISIT': place_visit_score, 'DISTANCE': distance_score, 
                 'TOTAL' :(place_visit_score )+ distance_score}
-        # print()
-        # for ind in ant.travel_path:
-        #     print( self.graph.nodes[ind].place, self.graph.nodes[ind].place.category)
-        # print(score)
-        # print()
+        
         return score
     
     def construct_itinerary(self, dest, start_date, start_time, end_time):
         plan = []
-        print('\n\nBEST_PATHHH: ', self.best_path)
+        print('BEST_PATHHH: ', self.best_path)
         print('SCORE:', self.best_score)
         print('TRAVEL_TIME', self.best_travel_time)
         print('WAIT_TIME', self.best_wait_time)
@@ -184,7 +178,6 @@ class BasicACO:
 
         travel_time_ind = 0
         for ind, i in enumerate(self.best_path):
-            print(ind, travel_time_ind)
             cur_node = self.graph.nodes[i]
             cur_place = self.graph.nodes[i].place
             if ind < len(self.best_path) - 1:
@@ -228,7 +221,6 @@ class BasicACO:
                 else:
                     next_place = None
                     travel_time = {}
-                print(ind, cur_place, cur_place.category, '\n')
                 temp = [Agenda(cur_place, cur_date
                                 , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
                                 , datetime(cur_date.year, cur_date.month, cur_date.day, day_start_time.hour, day_start_time.minute, day_start_time.second)
@@ -236,8 +228,3 @@ class BasicACO:
                 
 
         return Itinerary(dest, start_date, start_date + timedelta(days=len(plan) - 1), start_time, end_time, plan)
-
-
-
-
-        

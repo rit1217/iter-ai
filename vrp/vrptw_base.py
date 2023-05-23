@@ -1,9 +1,7 @@
 import numpy as np
-import copy
 import requests
 import googlemaps
 import os
-from datetime import time
 from dotenv import load_dotenv
 
 
@@ -40,7 +38,6 @@ class VrptwGraph:
         self.nodes = []
 
         for ind, place in enumerate(places):
-            # if place.category != 'RESTAURANT':
             ready_time = {}
             due_time = {}
             for day, op_time in place.opening_time.items():
@@ -48,14 +45,7 @@ class VrptwGraph:
 
             for day, cl_time in place.closing_time.items():
                 due_time[day] = min(to_minute(end_time) - to_minute(start_time), to_minute(cl_time) - to_minute(start_time))
-            # else:
-            #     ready_time = max(to_minute(time(11,30)) - to_minute(start_time), to_minute(place.opening_time) - to_minute(start_time))
-            #     due_time = min(to_minute(time(15)) - to_minute(start_time), to_minute(place.closing_time) - to_minute(start_time))
-
             self.nodes.append(Node(ind, place, ready_time ,due_time, self.cat_service_time[place.category]))
-        
-        # for ind, node in enumerate(self.nodes):
-        #     print(ind, node.place.place_name)
 
         self.node_dist_mat = self._cal_dist_mat(places, distance_cal_service)
         self.temp_dist_mat = np.copy(self.node_dist_mat)
@@ -64,11 +54,8 @@ class VrptwGraph:
 
         end = to_minute(end_time) - to_minute(start_time)
         for k, v in MEAL_TIME.items():
-            meal_start = to_minute(str_to_time(v[0])) - to_minute(start_time)
-            meal_end = to_minute(str_to_time(v[1])) - to_minute(start_time)
-                    
-            meal_start = max(0, meal_start)
-            meal_end = min(meal_end, end - 150)
+            meal_start = max(0, to_minute(str_to_time(v[0])) - to_minute(start_time))
+            meal_end = min(to_minute(str_to_time(v[1])) - to_minute(start_time), end - 150)
     
             if meal_start <= meal_end:
                 self.meal_time[k] = [meal_start, meal_end]
@@ -79,26 +66,11 @@ class VrptwGraph:
                 if i != self.nodes[index]:
                     self.temp_dist_mat[i][index] += wait_time
         self.vehicle_num = 2
-
         self.rho = rho
-
         self.nnh_travel_path, self.init_pheromone_val, _ = self.nearest_neighbor_heuristic(start_date, self.vehicle_num)
         self.init_pheromone_val = 1/(self.init_pheromone_val * self.node_num)
-
         self.pheromone_mat = np.ones((self.node_num, self.node_num)) * self.init_pheromone_val
         self.heuristic_info_mat = 1 / self.node_dist_mat
-
-    def copy(self, init_pheromone_val):
-        new_graph = copy.deepcopy(self)
-
-        new_graph.init_pheromone_val = init_pheromone_val
-        new_graph.pheromone_mat = np.ones((new_graph.node_num, new_graph.node_num)) * init_pheromone_val
-
-        return new_graph
-
-    @staticmethod
-    def calculate_dist(node_a, node_b):
-        return np.linalg.norm((node_a.x - node_b.x, node_a.y - node_b.y))
 
     def local_update_pheromone(self, start_ind, end_ind):
         self.pheromone_mat[start_ind][end_ind] = (1-self.rho) * self.pheromone_mat[start_ind][end_ind] + \
@@ -111,8 +83,6 @@ class VrptwGraph:
         for next_ind in best_path[1:]:
             self.pheromone_mat[current_ind][next_ind] += self.rho/best_score['TOTAL']
             current_ind = next_ind
-
-
 
     def nearest_neighbor_heuristic(self, current_date, max_vehicle_num=None):
         index_to_visit = list(range(1, self.node_num))
@@ -160,20 +130,10 @@ class VrptwGraph:
                 'Authorization': os.getenv('OPENROUTE_KEY'),
                 'Content-Type': 'application/json; charset=utf-8'
             }
-            # if len(places) >= 60:
-            #     locations = []
-            #     for place in places:
-            #         locations.append([place.longitude, place.latitude])
-            #     r = requests.post('https://api.openrouteservice.org/v2/matrix/driving-car', json={"locations": []}, headers=headers)
-            #     resp = r.json()
-            #     dist_mat = np.array(resp['durations']).astype(int)
-
-            # else:
             body = {"locations": []}
             for place in places:
                 body['locations'].append([place.longitude, place.latitude])
-            # print('BODY', body)
-            
+
             try:
                 r = requests.post('https://api.openrouteservice.org/v2/matrix/driving-car', json=body, headers=headers)
 
@@ -199,10 +159,8 @@ class VrptwGraph:
             dist_mat = np.array(dist_mat)
             
         return dist_mat  #second to minute
-       
     
     def _cal_nearest_next_index(self, index_to_visit, current_index, current_time, current_date):
-
         nearest_ind = None
         nearest_distance = None
 
@@ -216,7 +174,6 @@ class VrptwGraph:
                 continue
 
             if current_time + dist < self.nodes[next_index].ready_time[DAY_OF_WEEK[current_date.weekday()]] or current_time + dist > self.nodes[next_index].due_time[DAY_OF_WEEK[current_date.weekday()]]:
-
                 continue
 
             if nearest_distance is None or self.node_dist_mat[current_index][next_index] < nearest_distance:
@@ -224,5 +181,3 @@ class VrptwGraph:
                 nearest_ind = next_index
 
         return nearest_ind
-
-

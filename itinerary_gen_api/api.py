@@ -65,7 +65,7 @@ def api_recommenditinerary():
     num_day = ((end_date - start_date).days) + 1
 
     day_duration = (datetime.combine(date.today(), end_time) - datetime.combine(date.today(), start_time)).seconds
-    day_duration = day_duration//60         #as minutes
+    day_duration = day_duration//60 #as minutes
     n_places = num_day * 7
 
     if req_body['tripType'].lower() == 'fast':
@@ -78,15 +78,11 @@ def api_recommenditinerary():
     if start_date.replace(hour=(int(MEAL_TIME['DINNER'][0][:2])+service_time['RESTAURANT'])//60,
                           minute=(int(MEAL_TIME['DINNER'][0][3:5])+service_time['RESTAURANT'])%60) \
      <= start_date.replace(hour=end_time.hour, minute=end_time.minute):
-        n_restaurants = num_day  * 2 #restaurants
+        n_restaurants = num_day  * 2
     else:
         n_restaurants = num_day
 
-    
-    # n_shops = num_day // 2 #estimated by assumption of shopping every other day
-    
     n_attractions = n_places - n_restaurants
-
     places_dict = []
 
     # recommend attraction
@@ -117,7 +113,6 @@ def api_recommenditinerary():
     }
     accommodation = requests.post(URL, json=data).json()['recommended_accommodation']
     places_dict.insert(0, accommodation)
-    print('ATTRACT', n_attractions, 'REST', n_restaurants)
     places = []
     for place in places_dict:
         opening_time = {}
@@ -153,11 +148,6 @@ def api_recommenditinerary():
     print("ELAPSED TIME:", t.time() - start)
 
     itinerary_json = json.dumps(itinerary)
-    # headers = {
-    #     'Authorization': f'Bearer {get_token()}',
-    #     'Content-Type': 'application/json'
-    # }
-    # resp = requests.post('http://dev.se.kmitl.ac.th:1337/api/itinerary/', headers=headers, json=itinerary_json)
-    # print(resp)
+
     return itinerary_json
 

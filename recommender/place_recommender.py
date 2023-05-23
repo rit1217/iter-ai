@@ -113,7 +113,6 @@ class PlaceRecommender:
                 # add place id to candidate list
                 candidates.append(result.loc[result_index, 'place_id'])
                 top_n -= 1
-                # print(candidates)
         print(attractions)
         output = attractions[attractions.place_id.isin(candidates)]
         print(output)

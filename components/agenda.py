@@ -2,7 +2,6 @@ from datetime import datetime
 
 from .constants import *
 from .utils import *
-import json
 
 
 class Agenda:
@@ -16,9 +15,7 @@ class Agenda:
         self.arrival_time = arrive #datetime
         self.leave_time = leave #datetime        
         self.duration = datetime.combine(date.today(), leave) - datetime.combine(date.today(), arrive)
-        self.travel_time = travel_time
-        # self.duration = leave - arrive
-        
+        self.travel_time = travel_time        
 
     def __str__(self):
         

@@ -8,7 +8,6 @@ from recommender import PlaceRecommender
 app = flask.Flask(__name__) 
 
 
-
 @app.route('/api/recommendattraction/', methods = ['POST'])
 def api_recommendplace():
     req_body = flask.request.get_json()

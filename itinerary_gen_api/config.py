@@ -1,1 +1,1 @@
-RECOMMENDER_API_URL = "http://0.0.0.0:3100"
+RECOMMENDER_API_URL = "http://container_recom:5000"

@@ -1,5 +1,6 @@
 from datetime import datetime, time
 from components.constants import *
+import re
 import math
 
 
@@ -14,6 +15,11 @@ def add_time(t1, t2):
 
 def str_to_datetime(instr):
     return datetime.strptime(instr, DATETIME_FORMAT)
+
+
+def is_valid_time_format(time_string):
+    pattern = r'^\d{1,2}:\d{2}:\d{2}$'
+    return re.match(pattern, time_string) is not None
 
 
 def str_to_time(instr):

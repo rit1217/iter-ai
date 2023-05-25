@@ -25,6 +25,7 @@ SLOW_PACE_SERVICE_TIME = {
 }
 
 MEAL_TIME = {
+    'BREAKFAST': ["06:00:00", "09:00:00"],
     'LUNCH': ["11:30:00", "13:30:00"],
     'DINNER': ["17:00:00", "19:00:00"]
 }

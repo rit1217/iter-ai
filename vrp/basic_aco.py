@@ -71,7 +71,6 @@ class BasicACO:
             return 0, unused_depot_count - 1
         
         else:
-        
             distance_mat = ant.cal_temp_dist_mat(ant.vehicle_travel_time)
             
             self.graph.temp_dist_mat = distance_mat
@@ -81,10 +80,10 @@ class BasicACO:
                 np.power(closeness[current_index][index_to_visit], self.beta)
             transition_prob = transition_prob / np.sum(transition_prob)
 
-            if np.random.rand() < self.q0:
-                next_index = np.random.choice(index_to_visit, p=transition_prob)
-            else:
-                next_index = self._stochastic_accept(index_to_visit, transition_prob)
+            # if np.random.rand() < self.q0:
+            next_index = np.random.choice(index_to_visit, p=transition_prob)
+            # else:
+            #     next_index = self._stochastic_accept(index_to_visit, transition_prob)
 
             if not ant.check_condition(next_index):
                     temp = [x for _, x in sorted(zip(transition_prob, index_to_visit), reverse=True)]

@@ -75,15 +75,26 @@ def api_recommenditinerary():
     else:
         service_time = SLOW_PACE_SERVICE_TIME
 
-    if start_date.replace(hour=(int(MEAL_TIME['DINNER'][0][:2])+service_time['RESTAURANT'])//60,
-                          minute=(int(MEAL_TIME['DINNER'][0][3:5])+service_time['RESTAURANT'])%60) \
-     <= start_date.replace(hour=end_time.hour, minute=end_time.minute):
-        n_restaurants = num_day  * 2
-    else:
-        n_restaurants = num_day
+    n_restaurants = 0
+    for k,v in MEAL_TIME.items():
+        mins = (int(v[0][3:5])+service_time['RESTAURANT'])
+        if start_date.replace(hour=int(v[0][:2])+mins//60,
+                            minute=mins%60) \
+        <= start_date.replace(hour=end_time.hour, minute=end_time.minute) and \
+        start_date.replace(hour=(int(v[1][:2])),
+                        minute=(int(v[1][3:5]))) \
+        >= start_date.replace(hour=start_time.hour, minute=start_time.minute):
+            n_restaurants += num_day
+
+    # if start_date.replace(hour=(int(MEAL_TIME['DINNER'][0][:2])+service_time['RESTAURANT'])//60,
+    #                       minute=(int(MEAL_TIME['DINNER'][0][3:5])+service_time['RESTAURANT'])%60) \
+    #  <= start_date.replace(hour=end_time.hour, minute=end_time.minute):
+    #     n_restaurants += num_day
+
 
     n_attractions = n_places - n_restaurants
     places_dict = []
+    print('ATTRACRION', n_attractions, ", RESTAURANT", n_restaurants)
 
     # recommend attraction
     URL     = RECOMMENDER_API_URL + "/api/recommendattraction"
@@ -105,6 +116,7 @@ def api_recommenditinerary():
     }
     restaurants = requests.post(URL, json=data).json()['recommended_restaurants']
     places_dict.extend(restaurants)
+    # print(restaurants)
 
     #recommend accommodation
     URL     = RECOMMENDER_API_URL + "/api/recommendaccommodation"
@@ -122,8 +134,8 @@ def api_recommenditinerary():
                 opening_time[i['day'].lower()] = start_time
                 closing_time[i['day'].lower()] = end_time
             else:
-                opening_time[i['day'].lower()] = str_to_time(i['opening_time']) if i['opening_time'] != 'unknown' else start_time
-                closing_time[i['day'].lower()] = str_to_time(i['closing_time']) if i['opening_time'] != 'unknown' else end_time
+                opening_time[i['day'].lower()] = str_to_time(i['opening_time']) if is_valid_time_format(i['opening_time']) else start_time
+                closing_time[i['day'].lower()] = str_to_time(i['closing_time']) if is_valid_time_format(i['closing_time']) else end_time
         types = None
         if place['category_code'] == "ATTRACTION":
             types = place['attraction_types']

@@ -1,1 +1,1 @@
-RECOMMENDER_API_URL = "http://container_recom:5000"
+RECOMMENDER_API_URL = "http://dev.se.kmitl.ac.th:3400"

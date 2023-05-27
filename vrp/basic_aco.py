@@ -36,6 +36,9 @@ class BasicACO:
 
                     next_index, unused_depot_count = self.select_next_index(ants[k], unused_depot_count)
 
+                    if next_index == None:
+                        break
+
                     ants[k].move_to_next_index(next_index)
             
                     ants[k].graph.local_update_pheromone(ants[k].current_index, next_index)
@@ -95,8 +98,11 @@ class BasicACO:
                             break
 
                     if not flag:
-                        next_index = 0
-                        unused_depot_count -= 1
+                        if ant.travel_path[-1] != 0 and unused_depot_count > 1:
+                            next_index = 0
+                            unused_depot_count -= 1
+                        else:
+                            next_index = None
 
         return next_index, unused_depot_count
 

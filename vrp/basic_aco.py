@@ -61,7 +61,8 @@ class BasicACO:
 
             self.graph.global_update_pheromone(self.best_path, self.best_score)
 
-        return self.construct_itinerary(dest, start_date, start_time, end_time)
+        return self.best_path, self.best_score
+        # return self.construct_itinerary(dest, start_date, start_time, end_time)
         
     def select_next_index(self, ant, unused_depot_count):
         current_index = ant.current_index
@@ -94,7 +95,7 @@ class BasicACO:
                             next_index = n
                             break
 
-                    if not flag:
+                    if not flag and ant.travel_path[-1] != 0:
                         next_index = 0
                         unused_depot_count -= 1
 

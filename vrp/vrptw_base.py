@@ -36,6 +36,7 @@ class VrptwGraph:
         self.node_num = len(places)
         self.cat_service_time = cat_service_time
         self.nodes = []
+        self.start_date = start_date
 
         for ind, place in enumerate(places):
             ready_time = {}
@@ -46,16 +47,16 @@ class VrptwGraph:
             for day, cl_time in place.closing_time.items():
                 due_time[day] = min(to_minute(end_time) - to_minute(start_time), to_minute(cl_time) - to_minute(start_time))
             self.nodes.append(Node(ind, place, ready_time ,due_time, self.cat_service_time[place.category]))
-
+        
+        self.end_time = to_minute(end_time) - to_minute(start_time)
         self.node_dist_mat = self._cal_dist_mat(places, distance_cal_service)
         self.temp_dist_mat = np.copy(self.node_dist_mat)
 
         self.meal_time = {}
 
-        end = to_minute(end_time) - to_minute(start_time)
         for k, v in MEAL_TIME.items():
             meal_start = max(0, to_minute(str_to_time(v[0])) - to_minute(start_time))
-            meal_end = min(to_minute(str_to_time(v[1])) - to_minute(start_time), end - 150)
+            meal_end = min(to_minute(str_to_time(v[1])) - to_minute(start_time), self.end_time - 150)
     
             if meal_start <= meal_end:
                 self.meal_time[k] = [meal_start, meal_end]

@@ -37,19 +37,19 @@ def api_generateitinerary():
                  opening_time, closing_time, types)
         )
 
-    itinerary = ItineraryGenerator().generate_itinerary(places, req_body['destination'], 
+    itinerary = ItineraryGenerator().generate_itinerary_dfs(places, req_body['destination'], 
                     datetime.strptime(req_body['start_date'], DATE_FORMAT),
                     req_body['num_day'], 
                     start_time, end_time,
                     cat_service_time=req_body['service_time'])
     print(itinerary)
-    itinerary = itinerary.to_dict()
-    itinerary['co_travelers'] = req_body['co_travelers']
-    itinerary['owner'] = req_body['owner']
-    print(json.dumps(itinerary, indent=2))
+    # itinerary = itinerary.to_dict()
+    # itinerary['co_travelers'] = req_body['co_travelers']
+    # itinerary['owner'] = req_body['owner']
+    # print(json.dumps(itinerary, indent=2))
     print("ELAPSED TIME:", t.time() - start)
 
-    return json.dumps(itinerary)
+    return json.dumps({'sol':'GOOd'})
 
 
 @app.route('/api/recommenditinerary/', methods = ['POST'])

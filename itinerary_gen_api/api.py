@@ -106,6 +106,8 @@ def api_recommenditinerary():
     }
     attractions = requests.post(URL, json=data).json()['recommended_attractions']
     places_dict.extend(attractions)
+    for p in attractions:
+        print(p['place_id'])
 
     #recommend restaurant
     URL     = RECOMMENDER_API_URL + "/api/recommendrestaurant"
@@ -116,6 +118,8 @@ def api_recommenditinerary():
     }
     restaurants = requests.post(URL, json=data).json()['recommended_restaurants']
     places_dict.extend(restaurants)
+    for p in restaurants:
+        print(p['place_id'])
     # print(restaurants)
 
     #recommend accommodation
@@ -124,6 +128,7 @@ def api_recommenditinerary():
         'places': places_dict
     }
     accommodation = requests.post(URL, json=data).json()['recommended_accommodation']
+    print(accommodation['place_id'])
     places_dict.insert(0, accommodation)
     places = []
     for place in places_dict:

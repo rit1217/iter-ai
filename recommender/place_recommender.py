@@ -25,8 +25,8 @@ class PlaceRecommender:
         # print(places.probability)
         return np.random.choice(places['place_id'], size=size, p=places['probability'], replace=False)
     
-    def recommend_attraction(self, features, activities, destination, top_n=15):
-        features = process_strings(features)
+    def recommend_attraction(self, attraction_types, activities, destination, top_n=15):
+        attraction_types = process_strings(attraction_types)
         activities = process_strings(activities)
 
         connection_url = os.getenv('DB_URL')
@@ -66,20 +66,34 @@ class PlaceRecommender:
 
         attractions = pd.DataFrame(result_attractions.fetchall(), columns=result_attractions.keys())
         attractions = attractions[attractions.destination == destination]
+
+        attractions['activities_process'] = attractions.activities.apply(lambda x: process_strings(x) if isinstance(x, list) else [])
+        attractions['attraction_types_process'] = attractions.attraction_types.apply(lambda x: process_strings(x) if isinstance(x, list) else [])
+
         columns = ['place_id', 'place_name', 'attraction_types', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
         place_ids = attractions.place_id.tolist()
 
+        attraction_types_unique = attractions.attraction_types_process.explode().unique().tolist()
+        attraction_types = [type for type in attraction_types if type in attraction_types_unique]
+
+        activities_unique = attractions.activities_process.explode().unique().tolist()
+        activities = [activity for activity in activities if activity in activities_unique]
+
         attractions_vec = pd.DataFrame(result_rank_vect.fetchall(), columns=result_rank_vect.keys())
         attractions_vec = attractions_vec[attractions_vec.place_id.isin(place_ids)]
+        features_set = attraction_types + activities
+
+        #initialize variables
         candidates = []
-        features_set = features + activities
+        repeat_len_count = 0
+        prev_candidates_len = 0
         
         while top_n > 0:
             if len(features_set) == 0:
-                features_set = features + activities
+                features_set = attraction_types + activities
 
-            # choose random feature from set of features
-            feature = np.random.choice(features_set)
+            # select feature from set of features
+            feature = features_set[0]
             
             # get pool of attractions if it contain the chosen feature
             selection_pool = attractions_vec.loc[attractions_vec[feature] > 0, :].sort_values(feature, ascending=False)
@@ -112,10 +126,36 @@ class PlaceRecommender:
                 
                 # add place id to candidate list
                 candidates.append(result.loc[result_index, 'place_id'])
+                attractions_vec = attractions_vec.drop(attractions_vec[attractions_vec.place_id.isin(candidates)].index)
+                
                 top_n -= 1
-        print(attractions)
-        output = attractions[attractions.place_id.isin(candidates)]
-        print(output)
+
+            # print(len(candidates))
+            # Check if candidates list length is repeating
+            if len(candidates) == prev_candidates_len:
+                repeat_len_count += 1
+                if repeat_len_count >= 3:
+                    break
+            else:
+                repeat_len_count = 0
+                prev_candidates_len = len(candidates)
+        
+        attractions_rm_selected = attractions.drop(attractions[attractions.place_id.isin(candidates)].index)
+
+        # Convert attractions DataFrame to list of dictionaries
+        attractions_list = attractions_rm_selected.to_dict('records')
+
+        # Fill remaining candidates using n_nearest_place function
+        remaining_candidates = n_nearest_place(attractions[attractions.place_id.isin(candidates)].to_dict('records'), attractions_list, top_n)
+        candidates.extend([place['place_id'] for place in remaining_candidates])
+
+        # print(top_n)
+        # print(features_set)
+        # print(len(candidates))
+        # print(candidates)
+        # print(attractions)
+
+        output = attractions[attractions.place_id.isin(candidates)].reset_index()
 
         return output[columns[:len(columns)-1]]
 

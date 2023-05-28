@@ -28,6 +28,7 @@ class PlaceRecommender:
     def recommend_attraction(self, attraction_types, activities, destination, top_n=15):
         attraction_types = process_strings(attraction_types)
         activities = process_strings(activities)
+        destination = destination.upper()
 
         connection_url = os.getenv('DB_URL')
         engine = create_engine(connection_url)

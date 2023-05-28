@@ -75,13 +75,14 @@ class VrptwGraph:
     def local_update_pheromone(self, start_ind, end_ind):
         self.pheromone_mat[start_ind][end_ind] = (1-self.rho) * self.pheromone_mat[start_ind][end_ind] + \
                                                   self.rho * self.init_pheromone_val
+        # print(self.pheromone_mat[start_ind][end_ind])
 
     def global_update_pheromone(self, best_path, best_score):
         self.pheromone_mat = (1-self.rho) * self.pheromone_mat
-
         current_ind = best_path[0]
         for next_ind in best_path[1:]:
             self.pheromone_mat[current_ind][next_ind] += self.rho/best_score['TOTAL']
+            self.pheromone_mat[current_ind][next_ind] = max(0, self.pheromone_mat[current_ind][next_ind])
             current_ind = next_ind
 
     def nearest_neighbor_heuristic(self, current_date, max_vehicle_num=None):
@@ -142,6 +143,11 @@ class VrptwGraph:
                 dist_mat = np.array(resp['durations']).astype(int)
                 dist_mat = dist_mat / 60
                 dist_mat = np.ceil(dist_mat).astype(int)
+                n_row, n_col = dist_mat.shape
+                for i in range(n_row):
+                    for j in range(n_col):
+                        if i != j:
+                            dist_mat[i,j] = max(1, dist_mat[i, j])
             except Exception as e:
                 print(e)
 

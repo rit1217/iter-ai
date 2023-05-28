@@ -71,6 +71,21 @@ def nearest_place(lst1, lst2):
     return nearest_place
 
 
+def n_nearest_place(lst1, lst2, n):
+    lat = [place['latitude'] for place in lst1]
+    lng = [place['longitude'] for place in lst1]
+
+    center = {
+        'latitude': min(lat) + ((max(lat) - min(lat)) / 2),
+        'longitude': min(lng) + ((max(lng) - min(lng)) / 2)
+    }
+
+    sorted_places = sorted(lst2, key=lambda place: sphericalDistance(center['latitude'], center['longitude'],
+                                                                    place['latitude'], place['longitude']))
+
+    return sorted_places[:n]
+
+
 def row_to_dict(row):
     return row.to_dict()
 

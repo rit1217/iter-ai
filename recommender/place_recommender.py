@@ -196,16 +196,19 @@ class PlaceRecommender:
         restaurants = pd.DataFrame(result.fetchall(), columns=result.keys())
         restaurants = restaurants[restaurants.destination == destination]
         
-        selection_pool = restaurants[~restaurants.cuisine_types.isna()]
-        for cuisine in cuisine_types:
-            mask = selection_pool.cuisine_types.apply(lambda row: cuisine in row)
-            selection = self._roulette_selector(selection_pool[mask].copy(), size=min(num_dist, len(selection_pool[mask])))
-            candidates_id.extend(selection)
+        if len(restaurants[restaurants.destination == destination].cuisine_types.tolist()) == 0:
+            candidates_id = np.random.choice(restaurants[restaurants.destination == destination].copy(), size=top_n, replace=False)
+        else:
+            selection_pool = restaurants[~restaurants.cuisine_types.isna()]
+            for cuisine in cuisine_types:
+                mask = selection_pool.cuisine_types.apply(lambda row: cuisine in row)
+                selection = self._roulette_selector(selection_pool[mask].copy(), size=min(num_dist, len(selection_pool[mask])))
+                candidates_id.extend(selection)
 
-        if len(candidates_id) < top_n:
-            remaining_candidates = self._roulette_selector(selection_pool[~selection_pool.place_id.isin(candidates_id)].copy(),
-                                                        size=top_n - len(candidates_id))
-            candidates_id.extend(remaining_candidates)
+            if len(candidates_id) < top_n:
+                remaining_candidates = self._roulette_selector(selection_pool[~selection_pool.place_id.isin(candidates_id)].copy(),
+                                                            size=top_n - len(candidates_id))
+                candidates_id.extend(remaining_candidates)
 
         df_candidates = restaurants[restaurants.place_id.isin(candidates_id)]
         print(len(df_candidates))

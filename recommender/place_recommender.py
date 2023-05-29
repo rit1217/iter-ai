@@ -212,6 +212,8 @@ class PlaceRecommender:
 
         df_candidates = restaurants[restaurants.place_id.isin(candidates_id)]
         print(len(df_candidates))
+        df_candidates.cuisine_types = df_candidates.cuisine_types.apply(lambda x: process_strings(x) if isinstance(x, list) else [])
+
         return df_candidates[columns[:len(columns)-1]][:top_n]
     
     def recommend_accommodation(self, other_places):

@@ -12,7 +12,7 @@ from components.utils import *
 from .config import *
 
 app = flask.Flask(__name__) 
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app)
 
 
 @app.route('/api/generateitinerary/', methods = ['POST'])

@@ -1,4 +1,5 @@
 import flask
+from flask_cors import CORS
 import json
 
 from components.utils import *
@@ -6,7 +7,7 @@ from recommender import PlaceRecommender
 
 
 app = flask.Flask(__name__) 
-
+CORS(app)
 
 @app.route('/api/recommendattraction/', methods = ['POST'])
 def api_recommendplace():

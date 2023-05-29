@@ -1,4 +1,5 @@
 import flask
+from flask_cors import CORS
 from datetime import datetime, date
 import json
 import time as t
@@ -11,6 +12,7 @@ from components.utils import *
 from .config import *
 
 app = flask.Flask(__name__) 
+CORS(app)
 
 
 @app.route('/api/generateitinerary/', methods = ['POST'])

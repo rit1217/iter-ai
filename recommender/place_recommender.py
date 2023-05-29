@@ -197,7 +197,7 @@ class PlaceRecommender:
         restaurants = restaurants[restaurants.destination == destination]
         
         if restaurants.cuisine_types.isnull().all():
-            candidates_id = np.random.choice(restaurants[restaurants.destination == destination].copy(), size=top_n, replace=True)
+            candidates_id = np.random.choice(restaurants[restaurants.destination == destination].place_id.copy(), size=top_n, replace=True)
         else:
             selection_pool = restaurants[~restaurants.cuisine_types.isna()]
             for cuisine in cuisine_types:

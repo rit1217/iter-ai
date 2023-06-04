@@ -3,8 +3,6 @@ import numpy as np
 from sqlalchemy import create_engine, text
 from math import sqrt
 import os
-
-from .config import DATA_FILEPATHS
 from components.utils import *
 
 
@@ -19,16 +17,23 @@ class PlaceRecommender:
     def _dist(self, vec_a, vec_b):
         return sqrt(sum((e1-e2)**2 for e1, e2 in zip(vec_a, vec_b)))
     
-    def _roulette_selector(self, places, size=15):
+    def _roulette_selector(self, places, size=10):
         pop_fitness = places['popularity'].sum()
         places['probability'] = places.popularity / pop_fitness
         # print(places.probability)
-        return np.random.choice(places['place_id'], size=size, p=places['probability'], replace=False)
+        return np.random.choice(places['place_id'], size=size, p=places['probability'])
     
     def recommend_attraction(self, attraction_types, activities, destination, top_n=15):
+        if destination == "":
+            raise ValueError('Destination cannot be empty')
+        
+        if len(attraction_types) == 0 and len(activities) == 0:
+            raise ValueError('Attraction types or activities should have atleast 1 value')
+        
         attraction_types = process_strings(attraction_types)
         activities = process_strings(activities)
         destination = destination.upper()
+        columns = ['place_id', 'place_name', 'attraction_types', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
 
         connection_url = os.getenv('DB_URL')
         engine = create_engine(connection_url)
@@ -68,10 +73,12 @@ class PlaceRecommender:
         attractions = pd.DataFrame(result_attractions.fetchall(), columns=result_attractions.keys())
         attractions = attractions[attractions.destination == destination]
 
+        if len(attractions) < top_n:
+            return attractions[columns[:len(columns)-1]].to_dict('records')
+
         attractions['activities_process'] = attractions.activities.apply(lambda x: process_strings(x) if isinstance(x, list) else [])
         attractions['attraction_types_process'] = attractions.attraction_types.apply(lambda x: process_strings(x) if isinstance(x, list) else [])
 
-        columns = ['place_id', 'place_name', 'attraction_types', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
         place_ids = attractions.place_id.tolist()
 
         attraction_types_unique = attractions.attraction_types_process.explode().unique().tolist()
@@ -158,11 +165,17 @@ class PlaceRecommender:
 
         output = attractions[attractions.place_id.isin(candidates)].reset_index()
 
-        return output[columns[:len(columns)-1]]
+        return output[columns[:len(columns)-1]].to_dict('records')
 
-    def recommend_restaurant(self, cuisine_types, destination, top_n):
+    def recommend_restaurant(self, cuisine_types, destination, top_n=10):
+        if destination == "":
+            raise ValueError('Destination cannot be empty')
+        
+        if len(cuisine_types) == 0:
+            raise ValueError('Cuisine types should have atleast 1 value')
+        
         num_dist = top_n // len(cuisine_types)
-        candidates_id = []
+        candidates = []
         columns = ['place_id', 'place_name', 'cuisine_types', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
 
         connection_url = os.getenv('DB_URL')
@@ -195,26 +208,37 @@ class PlaceRecommender:
 
         restaurants = pd.DataFrame(result.fetchall(), columns=result.keys())
         restaurants = restaurants[restaurants.destination == destination]
+
+        if len(restaurants) < top_n:
+            return restaurants[columns[:len(columns)-1]].to_dict('records')
         
         if restaurants.cuisine_types.isnull().all():
-            candidates_id = np.random.choice(restaurants[restaurants.destination == destination].place_id.copy(), size=top_n, replace=True)
+            candidates = np.random.choice(restaurants[restaurants.destination == destination].place_id.copy(), size=top_n, replace=True)
         else:
             selection_pool = restaurants[~restaurants.cuisine_types.isna()]
             for cuisine in cuisine_types:
                 mask = selection_pool.cuisine_types.apply(lambda row: cuisine in row)
                 selection = self._roulette_selector(selection_pool[mask].copy(), size=min(num_dist, len(selection_pool[mask])))
-                candidates_id.extend(selection)
+                candidates.extend(selection)
 
-            if len(candidates_id) < top_n:
-                remaining_candidates = self._roulette_selector(selection_pool[~selection_pool.place_id.isin(candidates_id)].copy(),
-                                                            size=top_n - len(candidates_id))
-                candidates_id.extend(remaining_candidates)
+            if len(candidates) < top_n:
+                # remaining_candidates = self._roulette_selector(selection_pool[~selection_pool.place_id.isin(candidates_id)].copy(),
+                #                                             size=top_n - len(candidates_id))
+                # candidates_id.extend(remaining_candidates)
 
-        df_candidates = restaurants[restaurants.place_id.isin(candidates_id)]
+                restaurant_rm_selected = restaurants.drop(restaurants[restaurants.place_id.isin(candidates)].index)
+
+                # Convert restaurant DataFrame to list of dictionaries
+                restaurants_list = restaurant_rm_selected.to_dict('records')
+
+                remaining_candidates = n_nearest_place(restaurants[restaurants.place_id.isin(candidates)].to_dict('records'), restaurants_list, top_n)
+                candidates.extend([place['place_id'] for place in remaining_candidates])
+
+        df_candidates = restaurants[restaurants.place_id.isin(candidates)]
         print(len(df_candidates))
         df_candidates.cuisine_types = df_candidates.cuisine_types.apply(lambda x: process_strings(x) if isinstance(x, list) else [])
 
-        return df_candidates[columns[:len(columns)-1]][:top_n]
+        return df_candidates[columns[:len(columns)-1]][:top_n].to_dict('records')
     
     def recommend_accommodation(self, other_places):
         columns = ['place_id', 'place_name', 'category_code', 'latitude', 'longitude', 'opening_hours', 'popularity']
@@ -245,3 +269,9 @@ class PlaceRecommender:
         accom_list = accom_list[columns]
 
         return nearest_place(other_places, accom_list.to_dict('records'))
+    
+
+if __name__ == '__main__':
+    recommender = PlaceRecommender()
+
+    recommender.recommend_attraction(['Temple'], [], 'BANGKOK', 3)
